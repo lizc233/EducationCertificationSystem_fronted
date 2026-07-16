@@ -1,21 +1,54 @@
 <template>
-  <div class="login-page">
-    <div class="login-card glass">
-      <div class="hero">
-        <div class="logo">EC</div>
-        <h1>工程教育专业认证智能服务系统</h1>
-        <p>前后端分离 · Vue 3 · Element Plus · MyBatis-Plus</p>
+  <div class="login-wrap">
+    <div class="login-box page-box">
+      <div class="left">
+        <h1>工程教育认证系统</h1>
+        <div class="txt">前端演示页。当前先用本地账号登录。</div>
+
+        <div class="info page-box">
+          <div class="hd">当前说明</div>
+          <ul>
+            <li>系统基础只给管理员。</li>
+            <li>课程、评价、报告在锁定周期下默认只读。</li>
+            <li>这里只保留认证常用模块。</li>
+          </ul>
+        </div>
+
+        <div class="info page-box">
+          <div class="hd">测试账号</div>
+          <table class="acc-table">
+            <tr>
+              <th>账号</th>
+              <th>角色</th>
+            </tr>
+            <tr @click="pick('admin')">
+              <td>admin</td>
+              <td>管理员</td>
+            </tr>
+            <tr @click="pick('leader')">
+              <td>leader</td>
+              <td>专业负责人</td>
+            </tr>
+            <tr @click="pick('teacher')">
+              <td>teacher</td>
+              <td>课程负责人</td>
+            </tr>
+          </table>
+        </div>
       </div>
 
-      <el-form :model="form" ref="formRef" class="form" @submit.prevent>
-        <el-form-item prop="username">
-          <el-input v-model="form.username" placeholder="用户名" />
-        </el-form-item>
-        <el-form-item prop="password">
-          <el-input v-model="form.password" type="password" show-password placeholder="密码" />
-        </el-form-item>
-        <el-button type="primary" class="submit" :loading="loading" @click="handleLogin">登录</el-button>
-      </el-form>
+      <div class="right">
+        <div class="form-hd">登录</div>
+        <el-form @submit.prevent>
+          <el-form-item>
+            <el-input v-model="form.username" placeholder="账号" />
+          </el-form-item>
+          <el-form-item>
+            <el-input v-model="form.password" type="password" show-password placeholder="密码" />
+          </el-form-item>
+          <el-button class="btn" type="primary" :loading="loading" @click="go">登录</el-button>
+        </el-form>
+      </div>
     </div>
   </div>
 </template>
@@ -29,18 +62,24 @@ import { useAuthStore } from '../stores/auth';
 const router = useRouter();
 const auth = useAuthStore();
 const loading = ref(false);
-const formRef = ref();
-
 const form = reactive({
   username: 'admin',
   password: '123456'
 });
 
-async function handleLogin() {
+function pick(name) {
+  form.username = name;
+  form.password = '123456';
+}
+
+async function go() {
+  if (!form.username || !form.password) {
+    ElMessage.warning('账号和密码不能为空');
+    return;
+  }
   loading.value = true;
   try {
-    await auth.login(form);
-    ElMessage.success('登录成功');
+    await auth.doLogin(form);
     router.push('/dashboard');
   } finally {
     loading.value = false;
@@ -49,72 +88,95 @@ async function handleLogin() {
 </script>
 
 <style scoped>
-.login-page {
+.login-wrap {
   min-height: 100vh;
-  display: grid;
-  place-items: center;
-  padding: 24px;
-}
-
-.login-card {
-  width: min(960px, 100%);
-  min-height: 560px;
-  border-radius: 32px;
-  display: grid;
-  grid-template-columns: 1.2fr 0.8fr;
-  overflow: hidden;
-}
-
-.hero {
-  padding: 56px;
-  color: var(--text);
   display: flex;
-  flex-direction: column;
+  align-items: center;
   justify-content: center;
-  background:
-    radial-gradient(circle at 20% 20%, rgba(255, 138, 0, 0.18), transparent 32%),
-    linear-gradient(135deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.01));
+  padding: 18px;
 }
 
-.logo {
-  width: 72px;
-  height: 72px;
-  border-radius: 22px;
+.login-box {
+  width: 920px;
+  max-width: 100%;
   display: grid;
-  place-items: center;
-  color: #111827;
-  font-weight: 900;
+  grid-template-columns: 1.3fr 0.9fr;
+  background: #fff;
+}
+
+.left {
+  padding: 28px 24px 24px 24px;
+  border-right: 1px solid var(--line);
+}
+
+.left h1 {
+  margin: 0 0 10px;
   font-size: 24px;
-  background: linear-gradient(135deg, var(--brand), var(--brand-2));
-  margin-bottom: 22px;
+  font-weight: 600;
 }
 
-.hero h1 {
+.txt {
+  color: var(--sub);
+  margin-bottom: 14px;
+}
+
+.info {
+  padding: 10px 12px;
+  margin-bottom: 12px;
+}
+
+.hd {
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+
+.info ul {
   margin: 0;
-  font-size: 40px;
-  line-height: 1.08;
+  padding-left: 18px;
+  color: #4d5560;
+  line-height: 1.9;
 }
 
-.hero p {
-  color: var(--text-dim);
-  margin: 16px 0 0;
-}
-
-.form {
-  padding: 56px 40px;
-  background: rgba(255, 255, 255, 0.92);
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-}
-
-.submit {
+.acc-table {
   width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
 }
 
-@media (max-width: 900px) {
-  .login-card {
+.acc-table th,
+.acc-table td {
+  border: 1px solid var(--line);
+  padding: 8px 10px;
+  text-align: left;
+}
+
+.acc-table tr:nth-child(n + 2) {
+  cursor: pointer;
+}
+
+.right {
+  padding: 30px 26px 24px 26px;
+}
+
+.form-hd {
+  font-size: 20px;
+  font-weight: 600;
+  margin-bottom: 16px;
+}
+
+.btn {
+  width: 100%;
+  margin-top: 6px;
+}
+
+@media (max-width: 860px) {
+  .login-box {
     grid-template-columns: 1fr;
+  }
+
+  .left {
+    border-right: 0;
+    border-bottom: 1px solid var(--line);
   }
 }
 </style>

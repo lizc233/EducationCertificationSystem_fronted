@@ -1,19 +1,39 @@
 import axios from 'axios';
+import { ElMessage } from 'element-plus';
 
-const http = axios.create({
+const req = axios.create({
   baseURL: import.meta.env.VITE_API_BASE_URL || '/api',
-  timeout: 15000
+  timeout: 12000
 });
 
-http.interceptors.request.use((config) => {
-  const token = localStorage.getItem('ecs_token');
-  if (token) config.headers.Authorization = `Bearer ${token}`;
-  return config;
+req.interceptors.request.use((cfg) => {
+  const tk = localStorage.getItem('ecs_token');
+  if (tk) cfg.headers.Authorization = `Bearer ${tk}`;
+  return cfg;
 });
 
-http.interceptors.response.use(
-  (response) => response.data,
-  (error) => Promise.reject(error)
+req.interceptors.response.use(
+  (res) => {
+    const d = res.data;
+    if (d && typeof d === 'object' && Object.prototype.hasOwnProperty.call(d, 'code')) {
+      if (d.code === 200 || d.code === 0) return d.data ?? d;
+      ElMessage.error(d.msg || d.message || '请求失败');
+      return Promise.reject(d);
+    }
+    return d;
+  },
+  (err) => {
+    ElMessage.error(err?.response?.data?.msg || err.message || '请求失败');
+    return Promise.reject(err);
+  }
 );
 
-export default http;
+export function get(url, params, cfg = {}) {
+  return req.get(url, { params, ...cfg });
+}
+
+export function post(url, data, cfg = {}) {
+  return req.post(url, data, cfg);
+}
+
+export default req;

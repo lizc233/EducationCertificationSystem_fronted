@@ -1,140 +1,221 @@
 <template>
-  <el-container class="page-shell">
-    <el-aside width="248px" class="aside glass">
-      <div class="brand">
-        <div class="brand-mark">EC</div>
+  <div class="wrap">
+    <aside class="side page-box">
+      <div class="logo">
+        <div class="logo-a">EC</div>
         <div>
-          <div class="brand-title">认证智服系统</div>
-          <div class="brand-sub">Vue 3 + Vite</div>
+          <div class="logo-t">工程教育认证系统</div>
+          <div class="logo-s">前端演示</div>
         </div>
       </div>
 
-      <el-menu
-        class="menu"
-        router
-        :default-active="$route.path"
-        background-color="transparent"
-        text-color="#e8ecf6"
-        active-text-color="#ff8a00"
-      >
-        <el-menu-item v-for="item in navigation" :key="item.path" :index="item.path">
-          <el-icon><component :is="icons[item.icon]" /></el-icon>
-          <span>{{ item.label }}</span>
-        </el-menu-item>
-      </el-menu>
-    </el-aside>
+      <div class="cycle page-box">
+        <div class="c1">{{ cycle.name }}</div>
+        <div class="c2">{{ cycle.term }}</div>
+        <div class="c3">{{ cycle.locked ? '当前已锁定' : '当前可编辑' }}</div>
+      </div>
 
-    <el-container class="main">
-      <el-header class="header glass">
-        <div class="header-left">
-          <strong>{{ pageTitle }}</strong>
+      <div class="navs">
+        <RouterLink
+          v-for="it in list"
+          :key="it.path"
+          :to="it.path"
+          class="nav-item"
+          :class="{ on: route.path === it.path }"
+        >
+          <el-icon><component :is="icons[it.icon]" /></el-icon>
+          <span>{{ it.label }}</span>
+        </RouterLink>
+      </div>
+    </aside>
+
+    <div class="main">
+      <div class="head page-box">
+        <div>
+          <div class="top-title">{{ nowTitle }}</div>
+          <div class="sub-txt">{{ cycle.term }}　{{ cycle.name }}</div>
         </div>
-        <div class="header-right">
-          <span class="user-chip">{{ auth.user?.realName || '未登录' }}</span>
-          <el-button size="small" @click="handleLogout">退出</el-button>
+        <div class="rbox">
+          <span :class="['small-tag', cycle.locked ? 'tag-yellow' : 'tag-green']">
+            {{ cycle.locked ? '周期锁定' : '可编辑' }}
+          </span>
+          <span class="small-tag">{{ auth.user?.roleName || '未登录' }}</span>
+          <span class="small-tag">{{ auth.user?.realName || '' }}</span>
+          <el-button size="small" @click="quit">退出</el-button>
         </div>
-      </el-header>
-      <el-main class="content">
+      </div>
+
+      <div v-if="cycle.locked" class="lock-tip page-box">
+        {{ cycle.msg }}
+      </div>
+
+      <div class="body">
         <router-view />
-      </el-main>
-    </el-container>
-  </el-container>
+      </div>
+    </div>
+  </div>
 </template>
 
 <script setup>
 import { computed } from 'vue';
-import { useRouter } from 'vue-router';
+import { useRoute, useRouter } from 'vue-router';
 import { useAuthStore } from '../stores/auth';
-import { navigation } from '../data/navigation';
+import { navs } from '../data/navigation';
+import { canSee, cycle } from '../data/workspace';
 import {
-  Grid,
-  Setting,
-  School,
-  Notebook,
-  TrendCharts,
   Document,
-  RefreshRight,
   Files,
-  MagicStick
+  Grid,
+  Notebook,
+  RefreshRight,
+  School,
+  Setting,
+  TrendCharts
 } from '@element-plus/icons-vue';
 
-const icons = { Grid, Setting, School, Notebook, TrendCharts, Document, RefreshRight, Files, MagicStick };
+const icons = { Grid, Setting, School, Notebook, TrendCharts, Document, RefreshRight, Files };
 const auth = useAuthStore();
+const route = useRoute();
 const router = useRouter();
 
-const pageTitle = computed(() => navigation.find((item) => item.path === router.currentRoute.value.path)?.label || '总览');
+const list = computed(() => canSee(auth.role || 'admin'));
+const nowTitle = computed(() => {
+  if (route.path === '/dashboard') return '首页';
+  const it = navs.find((v) => v.path === route.path);
+  return it?.label || '模块';
+});
 
-function handleLogout() {
+function quit() {
   auth.logout();
   router.push('/login');
 }
 </script>
 
 <style scoped>
-.aside {
-  margin: 16px 0 16px 16px;
-  border-radius: 24px;
-  padding: 18px 14px;
+.wrap {
+  min-height: 100vh;
+  display: grid;
+  grid-template-columns: 220px 1fr;
 }
 
-.brand {
+.side {
+  margin: 10px 0 10px 10px;
+  padding: 10px;
+  background: #fafbfc;
+}
+
+.logo {
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 10px 10px 18px;
+  gap: 10px;
+  padding: 4px 2px 10px;
 }
 
-.brand-mark {
-  width: 44px;
-  height: 44px;
-  border-radius: 14px;
-  display: grid;
-  place-items: center;
-  color: #111827;
-  font-weight: 800;
-  background: linear-gradient(135deg, var(--brand), var(--brand-2));
-}
-
-.brand-title {
-  color: var(--text);
+.logo-a {
+  width: 38px;
+  height: 38px;
+  line-height: 38px;
+  text-align: center;
+  background: #4a78a8;
+  color: #fff;
   font-weight: 700;
+  border-radius: 4px;
 }
 
-.brand-sub {
-  color: var(--text-dim);
+.logo-t {
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.logo-s {
   font-size: 12px;
+  color: var(--sub);
 }
 
-.menu {
-  border-right: 0;
+.cycle {
+  padding: 10px;
+  margin-bottom: 12px;
+  background: #fff;
+}
+
+.c1 {
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+
+.c2,
+.c3 {
+  font-size: 12px;
+  color: var(--sub);
+}
+
+.navs {
+  display: grid;
+  gap: 2px;
+}
+
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 8px;
+  color: #40464d;
+  border: 1px solid transparent;
+}
+
+.nav-item.on {
+  background: #eef3f8;
+  border-color: #d5dfe9;
+  color: #2f5d8a;
 }
 
 .main {
+  padding: 10px 10px 10px 12px;
+}
+
+.head {
+  padding: 12px 14px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+  background: #fff;
+}
+
+.rbox {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.lock-tip {
+  padding: 8px 12px;
+  margin-bottom: 11px;
+  background: #fffdf6;
+  border-color: #ead9b2;
+  color: #8a631b;
+}
+
+.body {
   min-width: 0;
 }
 
-.header {
-  margin: 16px 16px 12px 0;
-  border-radius: 24px;
-  padding: 0 20px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  color: var(--text);
-}
+@media (max-width: 900px) {
+  .wrap {
+    grid-template-columns: 1fr;
+  }
 
-.header-right {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
+  .side {
+    margin: 10px;
+  }
 
-.user-chip {
-  color: var(--text);
-  opacity: 0.92;
-}
+  .head {
+    display: block;
+  }
 
-.content {
-  padding: 0 16px 16px 0;
+  .rbox {
+    margin-top: 10px;
+  }
 }
 </style>

@@ -1,30 +1,25 @@
-import http from './http';
+import { get, post } from './http';
 
-const MOCK = import.meta.env.VITE_MOCK_API !== 'false';
+const mock = import.meta.env.VITE_MOCK_API !== 'false';
 
-export async function login(payload) {
-  if (MOCK) {
-    return {
-      token: 'mock-token',
-      user: {
-        id: 1,
-        username: payload.username,
-        realName: '管理员',
-        roleName: '系统管理员'
-      }
-    };
+const users = {
+  admin: { id: 1, username: 'admin', realName: '系统管理员', role: 'admin', roleName: '管理员' },
+  teacher: { id: 2, username: 'teacher', realName: '张岚', role: 'teacher', roleName: '课程负责人' },
+  leader: { id: 3, username: 'leader', realName: '李老师', role: 'leader', roleName: '专业负责人' }
+};
+
+export function login(data) {
+  if (mock) {
+    const u = users[data.username] || users.admin;
+    return Promise.resolve({ token: `mock-${u.role}`, user: u });
   }
-  return http.post('/auth/login', payload);
+  return post('/auth/login', data);
 }
 
-export async function me() {
-  if (MOCK) {
-    return {
-      id: 1,
-      username: 'admin',
-      realName: '管理员',
-      roleName: '系统管理员'
-    };
+export function me() {
+  if (mock) {
+    const role = (localStorage.getItem('ecs_user_role') || 'admin');
+    return Promise.resolve(users[role] || users.admin);
   }
-  return http.get('/auth/me');
+  return get('/auth/me');
 }

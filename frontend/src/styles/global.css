@@ -1,16 +1,19 @@
 :root {
   color-scheme: light;
-  --bg: #0b1020;
-  --bg-soft: #11172b;
-  --panel: rgba(255, 255, 255, 0.08);
-  --panel-solid: #f7f8fc;
-  --line: rgba(255, 255, 255, 0.12);
-  --text: #e8ecf6;
-  --text-dim: #98a2b3;
-  --brand: #ff8a00;
-  --brand-2: #facc15;
-  --success: #2dd4bf;
-  --danger: #fb7185;
+  --bg: #f3f5f7;
+  --line: #d7dbe0;
+  --line-dark: #c3c8ce;
+  --text: #2f343a;
+  --sub: #6a717a;
+  --head: #f7f8fa;
+  --brand: #3f6fa2;
+  --warn: #bf8a2f;
+  --bad: #c75f5f;
+  --ok: #5a8c64;
+  --box: #ffffff;
+  --el-color-primary: var(--brand);
+  --el-border-radius-base: 4px;
+  --el-font-family: "Microsoft YaHei", "PingFang SC", sans-serif;
 }
 
 * {
@@ -23,11 +26,9 @@ body,
   width: 100%;
   height: 100%;
   margin: 0;
-  font-family: Inter, "PingFang SC", "Microsoft YaHei", sans-serif;
-  background:
-    radial-gradient(circle at top left, rgba(255, 138, 0, 0.16), transparent 28%),
-    radial-gradient(circle at right bottom, rgba(250, 204, 21, 0.12), transparent 24%),
-    linear-gradient(180deg, #050816 0%, #0b1020 100%);
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--el-font-family);
 }
 
 a {
@@ -35,13 +36,84 @@ a {
   text-decoration: none;
 }
 
-.glass {
-  backdrop-filter: blur(16px);
-  background: var(--panel);
-  border: 1px solid var(--line);
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.25);
+body {
+  font-size: 14px;
 }
 
-.page-shell {
-  min-height: 100vh;
+.page-box {
+  background: var(--box);
+  border: 1px solid var(--line);
+}
+
+.small-tag {
+  display: inline-block;
+  padding: 1px 8px;
+  border: 1px solid var(--line-dark);
+  background: #fafafa;
+  color: var(--sub);
+  border-radius: 3px;
+  font-size: 12px;
+  line-height: 22px;
+}
+
+.tag-blue {
+  color: #2f5d8a;
+  border-color: #b9c8d8;
+  background: #f4f8fc;
+}
+
+.tag-yellow {
+  color: #8a631b;
+  border-color: #ddc79d;
+  background: #fffaf0;
+}
+
+.tag-red {
+  color: #9b4646;
+  border-color: #e2b9b9;
+  background: #fff6f6;
+}
+
+.tag-green {
+  color: #47724f;
+  border-color: #bdd1c1;
+  background: #f5faf5;
+}
+
+.top-title {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 600;
+}
+
+.sub-txt {
+  color: var(--sub);
+}
+
+.el-button {
+  border-radius: 4px;
+}
+
+.el-card {
+  border-radius: 4px;
+  box-shadow: none;
+  border: 1px solid var(--line);
+}
+
+.el-table th.el-table__cell {
+  background: var(--head);
+  color: #4b5560;
+}
+
+.el-table td.el-table__cell,
+.el-table th.el-table__cell {
+  padding: 8px 0;
+}
+
+.el-tabs__header {
+  margin-bottom: 10px;
+}
+
+.el-tabs__item {
+  font-weight: 400;
 }
