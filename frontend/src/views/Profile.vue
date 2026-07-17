@@ -5,7 +5,7 @@
         <el-tab-pane label="个人信息" name="profile">
           <div class="split-grid split-grid--detail">
             <el-descriptions :column="1" border>
-              <el-descriptions-item label="账号">{{ userStore.userInfo.username }}</el-descriptions-item>
+              <el-descriptions-item label="账号">{{ userStore.userInfo.accountId }}</el-descriptions-item>
               <el-descriptions-item label="姓名">{{ userStore.userInfo.realName }}</el-descriptions-item>
               <el-descriptions-item label="角色">{{ roleLabel }}</el-descriptions-item>
               <el-descriptions-item label="院系">{{ userStore.userInfo.department }}</el-descriptions-item>
@@ -19,7 +19,7 @@
                 <el-input v-model.trim="profileForm.email" />
               </el-form-item>
               <el-form-item>
-                <el-button type="primary" @click="saveProfile">保存</el-button>
+                <el-button type="primary" :loading="profileLoading" @click="saveProfile">保存</el-button>
               </el-form-item>
             </el-form>
           </div>
@@ -37,7 +37,7 @@
               <el-input v-model="passwordForm.confirmPassword" type="password" show-password />
             </el-form-item>
             <el-form-item>
-              <el-button type="primary" @click="changePassword">确认修改</el-button>
+              <el-button type="primary" :loading="passwordLoading" @click="changePassword">确认修改</el-button>
             </el-form-item>
           </el-form>
         </el-tab-pane>
@@ -53,6 +53,7 @@ import { ElMessage } from 'element-plus';
 import StandardPage from '../components/page/StandardPage.vue';
 import SectionCard from '../components/page/SectionCard.vue';
 import { ROLE_LABEL_MAP, useUserStore } from '../store/user';
+import { getUserById, resetUserPassword, updateUser } from '../data/users';
 
 const USER_INFO_KEY = 'education_space_user_info';
 
@@ -60,6 +61,8 @@ const router = useRouter();
 const userStore = useUserStore();
 const activeTab = ref('profile');
 const passwordFormRef = ref();
+const profileLoading = ref(false);
+const passwordLoading = ref(false);
 
 const roleLabel = computed(() => ROLE_LABEL_MAP[userStore.userInfo.role] || '未分配角色');
 
@@ -92,11 +95,22 @@ const passwordRules = {
   ]
 };
 
-function saveProfile() {
-  userStore.userInfo.phone = profileForm.phone;
-  userStore.userInfo.email = profileForm.email;
-  localStorage.setItem(USER_INFO_KEY, JSON.stringify(userStore.userInfo));
-  ElMessage.success('保存成功');
+async function saveProfile() {
+  profileLoading.value = true;
+  try {
+    updateUser({
+      ...userStore.userInfo,
+      phone: profileForm.phone,
+      email: profileForm.email
+    });
+    userStore.userInfo.phone = profileForm.phone;
+    userStore.userInfo.email = profileForm.email;
+    localStorage.setItem(USER_INFO_KEY, JSON.stringify(userStore.userInfo));
+    await new Promise((resolve) => window.setTimeout(resolve, 400));
+    ElMessage.success('保存成功');
+  } finally {
+    profileLoading.value = false;
+  }
 }
 
 async function changePassword() {
@@ -105,8 +119,21 @@ async function changePassword() {
     return;
   }
 
-  ElMessage.success('密码修改成功，请重新登录');
-  userStore.logout();
-  await router.push('/login');
+  const currentUser = getUserById(userStore.userInfo.id);
+  if (!currentUser || currentUser.password !== passwordForm.oldPassword) {
+    ElMessage.error('原密码输入不正确');
+    return;
+  }
+
+  passwordLoading.value = true;
+  try {
+    resetUserPassword(userStore.userInfo.id, passwordForm.newPassword);
+    await new Promise((resolve) => window.setTimeout(resolve, 400));
+    ElMessage.success('密码修改成功，请重新登录');
+    userStore.logout();
+    await router.push('/login');
+  } finally {
+    passwordLoading.value = false;
+  }
 }
 </script>

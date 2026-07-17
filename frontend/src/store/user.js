@@ -1,48 +1,16 @@
 import { defineStore } from 'pinia';
 import request from '../utils/request';
+import {
+  ROLE_LABEL_MAP,
+  getUserById,
+  resolveLoginUser
+} from '../data/users';
+
+export { ROLE_LABEL_MAP };
 
 const TOKEN_KEY = 'education_space_token';
 const USER_INFO_KEY = 'education_space_user_info';
 const PERMISSIONS_KEY = 'education_space_permissions';
-
-export const ROLE_LABEL_MAP = {
-  ROLE_SUPER_ADMIN: '系统管理员',
-  ROLE_TEACHER: '教师',
-  ROLE_STUDENT: '学生'
-};
-
-const MOCK_USERS = {
-  admin: {
-    id: 1,
-    username: 'admin',
-    realName: '张老师',
-    role: 'ROLE_SUPER_ADMIN',
-    department: '教务处',
-    phone: '13800000001',
-    email: 'admin@school.edu',
-    status: 1
-  },
-  teacher: {
-    id: 2,
-    username: 'teacher',
-    realName: '李老师',
-    role: 'ROLE_TEACHER',
-    department: '计算机学院',
-    phone: '13800000002',
-    email: 'teacher@school.edu',
-    status: 1
-  },
-  student: {
-    id: 3,
-    username: 'student',
-    realName: '王同学',
-    role: 'ROLE_STUDENT',
-    department: '计算机学院',
-    phone: '13800000003',
-    email: 'student@school.edu',
-    status: 1
-  }
-};
 
 const ROLE_PERMISSION_MAP = {
   ROLE_SUPER_ADMIN: ['dashboard:view', 'page:*'],
@@ -53,7 +21,7 @@ const ROLE_PERMISSION_MAP = {
 function createDefaultUserInfo() {
   return {
     id: null,
-    username: '',
+    accountId: '',
     realName: '',
     role: '',
     department: '',
@@ -111,24 +79,32 @@ export const useUserStore = defineStore('user', {
     isStudent: (state) => state.userInfo.role === 'ROLE_STUDENT'
   },
   actions: {
-    async login(username, password, captcha) {
+    async login(account, password, captcha) {
       await sleep();
 
       if (!captcha) {
         throw new Error('请输入验证码');
       }
 
-      const normalizedUsername = String(username || '').trim();
-      const currentUser = MOCK_USERS[normalizedUsername];
+      const normalizedAccount = String(account || '').trim();
+      const currentUser = resolveLoginUser(normalizedAccount);
 
-      if (!currentUser || password !== '123456') {
-        throw new Error('用户名或密码错误');
+      if (!currentUser) {
+        throw new Error('账号或密码错误');
+      }
+
+      if (currentUser.status !== 1) {
+        throw new Error('当前账号已被停用，请联系管理员');
+      }
+
+      if (password !== currentUser.password) {
+        throw new Error('账号或密码错误');
       }
 
       const response = await request.post(
         '/auth/login',
         {
-          username: normalizedUsername,
+          account: normalizedAccount,
           password,
           captcha
         },
@@ -157,7 +133,11 @@ export const useUserStore = defineStore('user', {
         return null;
       }
 
-      const currentUser = MOCK_USERS[this.userInfo.username] || MOCK_USERS.admin;
+      const currentUser = getUserById(this.userInfo.id);
+      if (!currentUser) {
+        throw new Error('用户不存在或已被删除');
+      }
+
       const response = await request.get('/user/me', {
         mockData: {
           userInfo: cloneUserInfo(currentUser),

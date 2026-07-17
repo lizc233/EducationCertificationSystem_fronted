@@ -2,7 +2,7 @@
   <StandardPage :title="config.title" :breadcrumbs="config.breadcrumbs" :description="config.description">
     <template #actions>
       <el-button
-        v-for="action in config.pageActions || []"
+        v-for="action in visiblePageActions"
         :key="action.label"
         :type="action.type || 'default'"
         :loading="Boolean(actionLoading[action.label])"
@@ -117,6 +117,14 @@
         </el-tabs>
       </template>
 
+      <div v-if="config.highlights?.length" class="page-kpis" style="margin-bottom: 18px;">
+        <article v-for="item in config.highlights" :key="item.label" class="page-kpi">
+          <div class="page-kpi__label">{{ item.label }}</div>
+          <div class="page-kpi__value">{{ item.value }}</div>
+          <div class="page-kpi__desc">{{ item.desc }}</div>
+        </article>
+      </div>
+
       <div class="crud-table-shell">
         <el-table v-loading="tableLoading" :data="pagedRows" border stripe class="crud-table" :height="config.layout === 'list' ? '100%' : undefined">
           <el-table-column
@@ -136,7 +144,7 @@
               </template>
               <template v-else-if="column.type === 'actions'">
                 <el-button
-                  v-for="action in config.rowActions || []"
+                  v-for="action in visibleRowActions"
                   :key="action.label"
                   type="primary"
                   link
@@ -218,6 +226,7 @@ import { useRoute, useRouter } from 'vue-router';
 import StandardPage from '../../components/page/StandardPage.vue';
 import SectionCard from '../../components/page/SectionCard.vue';
 import { crudPageConfigs } from '../../data/crudPages';
+import { useUserStore } from '../../store/user';
 
 const props = defineProps({
   pageKey: {
@@ -228,6 +237,7 @@ const props = defineProps({
 
 const route = useRoute();
 const router = useRouter();
+const userStore = useUserStore();
 const config = crudPageConfigs[props.pageKey];
 const sourceRows = ref(config.rows.map((row) => ({ ...row })));
 const dialogVisible = ref(false);
@@ -256,6 +266,38 @@ const dialogRules = Object.fromEntries(
       : [{ required: true, message: `请输入${field.label}`, trigger: field.type === 'select' ? 'change' : 'blur' }]
   ])
 );
+
+const visiblePageActions = computed(() => {
+  return (config.pageActions || []).filter((action) => {
+    if (action.roles && !action.roles.includes(userStore.userInfo.role)) {
+      return false;
+    }
+
+    if (userStore.isTeacher && props.pageKey === 'improve') {
+      return false;
+    }
+
+    return true;
+  });
+});
+
+const visibleRowActions = computed(() => {
+  return (config.rowActions || []).filter((action) => {
+    if (action.roles && !action.roles.includes(userStore.userInfo.role)) {
+      return false;
+    }
+
+    if (userStore.isTeacher && props.pageKey === 'evaluation-materials') {
+      return action.type === 'route';
+    }
+
+    if (userStore.isTeacher && props.pageKey === 'improve') {
+      return action.type === 'route' && action.mode === 'view';
+    }
+
+    return true;
+  });
+});
 
 const filteredRows = computed(() => {
   return sourceRows.value.filter((row) => {
@@ -409,6 +451,32 @@ async function handleRowAction(action, row) {
     } catch {
       ElMessage.info('已取消删除');
     }
+    return;
+  }
+
+  if (action.type === 'toggle') {
+    await simulateAsync(loadingKey, () => {
+      const [enabledValue, disabledValue] = action.values || ['启用', '停用'];
+      row[action.field] = row[action.field] === enabledValue ? disabledValue : enabledValue;
+    });
+    return;
+  }
+
+  if (action.type === 'set-status') {
+    await simulateAsync(loadingKey, () => {
+      row[action.field] = action.value;
+    });
+    return;
+  }
+
+  if (action.type === 'copy-row') {
+    await simulateAsync(loadingKey, () => {
+      sourceRows.value.unshift({
+        ...row,
+        id: `${props.pageKey}-copy-${Date.now()}`
+      });
+      currentPage.value = 1;
+    });
     return;
   }
 

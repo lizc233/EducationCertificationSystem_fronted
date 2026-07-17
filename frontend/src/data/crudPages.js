@@ -15,6 +15,9 @@ function createSchema(fields) {
 const colleges = ['计算机学院', '自动化学院', '电子信息学院', '机械工程学院'];
 const userRoles = ['系统管理员', '教师', '学生'];
 const enableStatuses = ['启用', '停用'];
+const programStatuses = ['启用', '停用', '归档'];
+const surveyStatuses = ['草稿', '发布中', '已结束'];
+const teachers = ['李青', '周鹏', '张敏', '王静', '陈曦'];
 
 const userFields = createSchema([
   { prop: 'studentId', label: '学号', type: 'input' },
@@ -33,7 +36,7 @@ const userSeeds = [
 ];
 
 const paramFields = createSchema([
-  { prop: 'group', label: '参数分组', type: 'select', options: ['基础设置', '通知配置', '统计规则'] },
+  { prop: 'group', label: '参数分组', type: 'select', options: ['基本参数', '认证参数', '邮件参数'] },
   { prop: 'key', label: '参数键', type: 'input' },
   { prop: 'value', label: '参数值', type: 'input' },
   { prop: 'type', label: '类型', type: 'select', options: ['字符串', '数字', '布尔值'] },
@@ -62,6 +65,11 @@ export const crudPageConfigs = {
     title: '用户管理',
     description: '维护账号档案、角色授权与状态信息。',
     breadcrumbs: ['首页', '基础管理', '用户管理'],
+    highlights: [
+      { label: '用户总数', value: '128', desc: '覆盖管理员、教师和学生三类账号。' },
+      { label: '教师账号', value: '42', desc: '参与课程、评价和报告填报业务。' },
+      { label: '异常状态', value: '06', desc: '待启用或停用的账号数量。' }
+    ],
     pageActions: [
       { label: '新增用户', type: 'primary', behavior: 'dialog' },
       { label: '导入用户', behavior: 'async' },
@@ -105,19 +113,24 @@ export const crudPageConfigs = {
   params: {
     layout: 'config',
     title: '系统参数',
-    description: '按参数分组维护基础设置、通知规则和评价阈值。',
+    description: '按参数分组维护基本参数、认证参数和邮件参数。',
     breadcrumbs: ['首页', '基础管理', '系统参数'],
+    highlights: [
+      { label: '参数组', value: '03', desc: '当前分为基本参数、认证参数和邮件参数。' },
+      { label: '启用参数', value: '24', desc: '已投入当前认证业务流程使用。' },
+      { label: '待复核', value: '02', desc: '建议在本周内完成参数复核。' }
+    ],
     pageActions: [{ label: '新增参数', type: 'primary', behavior: 'dialog' }],
     filters: [
       { prop: 'keyword', label: '关键词', type: 'input', placeholder: '搜索参数键 / 参数值' },
-      { prop: 'group', label: '分组', type: 'select', options: ['基础设置', '通知配置', '统计规则'] },
+      { prop: 'group', label: '分组', type: 'select', options: ['基本参数', '认证参数', '邮件参数'] },
       { prop: 'status', label: '状态', type: 'select', options: enableStatuses }
     ],
     tabs: [
       { label: '全部', value: '全部' },
-      { label: '基础设置', value: '基础设置' },
-      { label: '通知配置', value: '通知配置' },
-      { label: '统计规则', value: '统计规则' }
+      { label: '基本参数', value: '基本参数' },
+      { label: '认证参数', value: '认证参数' },
+      { label: '邮件参数', value: '邮件参数' }
     ],
     tabField: 'group',
     keywordFields: ['key', 'value', 'desc'],
@@ -137,9 +150,9 @@ export const crudPageConfigs = {
     ],
     rows: expandRows(
       [
-        { group: '基础设置', key: 'system.name', value: '工程教育认证系统', type: '字符串', desc: '系统名称', status: '启用' },
-        { group: '通知配置', key: 'notice.expire.days', value: '30', type: '数字', desc: '通知保留天数', status: '启用' },
-        { group: '统计规则', key: 'achievement.threshold', value: '0.75', type: '数字', desc: '达成度预警阈值', status: '启用' }
+        { group: '基本参数', key: 'system.name', value: '工程教育认证系统', type: '字符串', desc: '系统名称', status: '启用' },
+        { group: '邮件参数', key: 'mail.notice.sender', value: 'noreply@edu.cn', type: '字符串', desc: '通知发件邮箱', status: '启用' },
+        { group: '认证参数', key: 'achievement.threshold', value: '0.75', type: '数字', desc: '达成度预警阈值', status: '启用' }
       ],
       12,
       (row, index) => ({
@@ -158,7 +171,12 @@ export const crudPageConfigs = {
     title: '操作日志',
     description: '查看登录记录、业务操作结果与导出历史。',
     breadcrumbs: ['首页', '基础管理', '操作日志'],
-    pageActions: [{ label: '导出日志', behavior: 'async' }],
+    highlights: [
+      { label: '今日日志', value: '126', desc: '包含登录、保存、导出等操作记录。' },
+      { label: '失败操作', value: '03', desc: '需关注异常导入与权限校验问题。' },
+      { label: '导出任务', value: '11', desc: '今日触发的报表与数据导出次数。' }
+    ],
+    pageActions: [{ label: '导出', behavior: 'async' }],
     filters: [
       { prop: 'range', label: '时间范围', type: 'daterange' },
       { prop: 'operator', label: '操作人', type: 'input', placeholder: '输入操作人姓名' },
@@ -167,7 +185,7 @@ export const crudPageConfigs = {
     keywordFields: ['operator', 'detail'],
     tableTitle: '日志列表',
     columns: [
-      { prop: 'time', label: '操作时间', minWidth: 170 },
+      { prop: 'time', label: '时间', minWidth: 170 },
       { prop: 'operator', label: '操作人', minWidth: 110 },
       { prop: 'module', label: '模块', minWidth: 120 },
       { prop: 'type', label: '操作类型', minWidth: 100 },
@@ -192,15 +210,20 @@ export const crudPageConfigs = {
     title: '方案管理',
     description: '维护培养方案版本、适用年级、专业和归档状态。',
     breadcrumbs: ['首页', '方案与课程', '方案管理'],
+    highlights: [
+      { label: '有效方案', value: '18', desc: '当前处于启用与待归档状态的培养方案。' },
+      { label: '归档版本', value: '07', desc: '用于历次认证与复核的历史版本。' },
+      { label: '本周新增', value: '02', desc: '最近一周新增或复制的方案数量。' }
+    ],
     pageActions: [
       { label: '新增方案', type: 'primary', behavior: 'dialog' },
-      { label: '复制版本', behavior: 'async' },
-      { label: '导出方案', behavior: 'async' }
+      { label: '复制方案', behavior: 'async' },
+      { label: '归档', behavior: 'async' }
     ],
     filters: [
-      { prop: 'keyword', label: '方案名称', type: 'input', placeholder: '搜索方案名称 / 专业' },
+      { prop: 'keyword', label: '关键词', type: 'input', placeholder: '搜索方案名称 / 专业' },
       { prop: 'major', label: '专业', type: 'select', options: ['计算机科学与技术', '软件工程', '自动化'] },
-      { prop: 'status', label: '状态', type: 'select', options: ['启用', '停用', '归档'] }
+      { prop: 'status', label: '状态', type: 'select', options: programStatuses }
     ],
     keywordFields: ['name', 'major'],
     tableTitle: '培养方案列表',
@@ -215,8 +238,8 @@ export const crudPageConfigs = {
       { prop: 'actions', label: '操作', fixed: 'right', width: 220, type: 'actions' }
     ],
     rowActions: [
-      { label: '查看详情', type: 'route', mode: 'view' },
       { label: '编辑', type: 'route', mode: 'edit' },
+      { label: '启用/停用', type: 'toggle', field: 'status', values: ['启用', '停用'] },
       { label: '删除', type: 'delete' }
     ],
     rows: expandRows(
@@ -240,7 +263,7 @@ export const crudPageConfigs = {
         { prop: 'grade', label: '适用年级', type: 'input' },
         { prop: 'version', label: '版本号', type: 'input' },
         { prop: 'owner', label: '负责人', type: 'input' },
-        { prop: 'status', label: '状态', type: 'select', options: ['启用', '停用', '归档'] },
+        { prop: 'status', label: '状态', type: 'select', options: programStatuses },
         { prop: 'remark', label: '版本说明', type: 'textarea' }
       ])
     }
@@ -250,15 +273,19 @@ export const crudPageConfigs = {
     title: '课程管理',
     description: '维护课程编码、学分学时、课程性质和开课单位。',
     breadcrumbs: ['首页', '方案与课程', '课程管理'],
+    highlights: [
+      { label: '课程总数', value: '246', desc: '含专业核心课、基础课与实践环节。' },
+      { label: '启用课程', value: '231', desc: '当前在用课程基础信息条目。' },
+      { label: '停用课程', value: '15', desc: '已停用但保留历史记录的课程。' }
+    ],
     pageActions: [
       { label: '新增课程', type: 'primary', behavior: 'dialog' },
-      { label: '导入课程', behavior: 'async' },
-      { label: '导出课程', behavior: 'async' }
+      { label: '导入', behavior: 'async' },
+      { label: '导出', behavior: 'async' }
     ],
     filters: [
-      { prop: 'keyword', label: '关键词', type: 'input', placeholder: '搜索课程代码 / 名称' },
-      { prop: 'nature', label: '课程性质', type: 'select', options: ['必修', '选修'] },
-      { prop: 'status', label: '状态', type: 'select', options: enableStatuses }
+      { prop: 'keyword', label: '课程名称', type: 'input', placeholder: '搜索课程代码 / 名称' },
+      { prop: 'department', label: '开课单位', type: 'select', options: colleges }
     ],
     keywordFields: ['code', 'name'],
     tableTitle: '课程列表',
@@ -270,12 +297,11 @@ export const crudPageConfigs = {
       { prop: 'nature', label: '性质', minWidth: 90 },
       { prop: 'department', label: '开课单位', minWidth: 150 },
       { prop: 'status', label: '状态', minWidth: 100, type: 'tag', tagType: { 启用: 'success', 停用: 'info' } },
-      { prop: 'actions', label: '操作', fixed: 'right', width: 220, type: 'actions' }
+      { prop: 'actions', label: '操作', fixed: 'right', width: 180, type: 'actions' }
     ],
     rowActions: [
-      { label: '查看详情', type: 'route', mode: 'view' },
       { label: '编辑', type: 'route', mode: 'edit' },
-      { label: '删除', type: 'delete' }
+      { label: '停用/启用', type: 'toggle', field: 'status', values: ['启用', '停用'] }
     ],
     rows: expandRows(
       [
@@ -308,14 +334,18 @@ export const crudPageConfigs = {
     title: '授课任务分配',
     description: '维护课程、班级、学期与任课教师的授课安排。',
     breadcrumbs: ['首页', '方案与课程', '授课任务分配'],
+    highlights: [
+      { label: '本学期任务', value: '68', desc: '当前学期已建立的授课任务数。' },
+      { label: '待分配', value: '09', desc: '尚未完成教师分配的课程班级。' },
+      { label: '覆盖班级', value: '34', desc: '已纳入本轮排课与授课安排。' }
+    ],
     pageActions: [
-      { label: '新增任务', type: 'primary', behavior: 'dialog' },
-      { label: '批量分配教师', behavior: 'async' }
+      { label: '新增任务', type: 'primary', behavior: 'dialog' }
     ],
     filters: [
       { prop: 'term', label: '学期', type: 'select', options: ['2025-2026-2', '2025-2026-1'] },
       { prop: 'course', label: '课程', type: 'select', options: ['程序设计基础', '软件工程', '数据库原理'] },
-      { prop: 'teacher', label: '教师', type: 'input', placeholder: '搜索教师姓名' }
+      { prop: 'teacher', label: '教师', type: 'select', options: teachers }
     ],
     keywordFields: ['teacher', 'className'],
     tableTitle: '授课任务列表',
@@ -323,13 +353,12 @@ export const crudPageConfigs = {
       { prop: 'term', label: '学期', minWidth: 120 },
       { prop: 'course', label: '课程', minWidth: 160 },
       { prop: 'className', label: '班级', minWidth: 140 },
-      { prop: 'teacher', label: '任课教师', minWidth: 120 },
+      { prop: 'teacher', label: '教师', minWidth: 120 },
       { prop: 'status', label: '状态', minWidth: 100, type: 'tag', tagType: { 已分配: 'success', 待分配: 'warning' } },
-      { prop: 'location', label: '上课地点', minWidth: 130 },
-      { prop: 'actions', label: '操作', fixed: 'right', width: 220, type: 'actions' }
+      { prop: 'location', label: '地点', minWidth: 130 },
+      { prop: 'actions', label: '操作', fixed: 'right', width: 180, type: 'actions' }
     ],
     rowActions: [
-      { label: '查看详情', type: 'route', mode: 'view' },
       { label: '编辑', type: 'route', mode: 'edit' },
       { label: '删除', type: 'delete' }
     ],
@@ -337,7 +366,7 @@ export const crudPageConfigs = {
       [
         { term: '2025-2026-2', course: '程序设计基础', className: '计科 2501', teacher: '李青', status: '已分配', location: '主楼 301' },
         { term: '2025-2026-2', course: '软件工程', className: '软工 2402', teacher: '周鹏', status: '已分配', location: '主楼 402' },
-        { term: '2025-2026-2', course: '数据库原理', className: '计科 2403', teacher: '待分配', status: '待分配', location: '待定' }
+        { term: '2025-2026-2', course: '数据库原理', className: '计科 2403', teacher: '张敏', status: '待分配', location: '待定' }
       ],
       12,
       (row, index) => ({
@@ -351,7 +380,7 @@ export const crudPageConfigs = {
         { prop: 'term', label: '学期', type: 'input' },
         { prop: 'course', label: '课程', type: 'input' },
         { prop: 'className', label: '班级', type: 'input' },
-        { prop: 'teacher', label: '任课教师', type: 'input' },
+        { prop: 'teacher', label: '教师', type: 'input' },
         { prop: 'location', label: '上课地点', type: 'input' },
         { prop: 'status', label: '状态', type: 'select', options: ['已分配', '待分配'] }
       ])
@@ -362,9 +391,13 @@ export const crudPageConfigs = {
     title: '考核证据材料管理',
     description: '管理课程证据材料、考核方式和审核归档状态。',
     breadcrumbs: ['首页', '评价与达成', '考核证据材料管理'],
+    highlights: [
+      { label: '材料总数', value: '152', desc: '已上传的课程证据与考核支撑材料。' },
+      { label: '待审核', value: '13', desc: '需要本周完成审核处理的材料。' },
+      { label: '退回材料', value: '04', desc: '需教师重新提交或补充说明。' }
+    ],
     pageActions: [
-      { label: '上传材料', type: 'primary', behavior: 'dialog' },
-      { label: '批量导出', behavior: 'async' }
+      { label: '上传材料', type: 'primary', behavior: 'dialog' }
     ],
     filters: [
       { prop: 'course', label: '课程', type: 'select', options: ['程序设计基础', '软件工程'] },
@@ -375,15 +408,16 @@ export const crudPageConfigs = {
     columns: [
       { prop: 'name', label: '材料名称', minWidth: 220 },
       { prop: 'course', label: '关联课程', minWidth: 150 },
-      { prop: 'assessment', label: '考核方式', minWidth: 140 },
+      { prop: 'assessment', label: '关联考核方式', minWidth: 140 },
       { prop: 'uploader', label: '上传人', minWidth: 110 },
       { prop: 'uploadedAt', label: '上传时间', minWidth: 170 },
       { prop: 'status', label: '状态', minWidth: 100, type: 'tag', tagType: { 待审核: 'warning', 已通过: 'success', 已退回: 'danger' } },
-      { prop: 'actions', label: '操作', fixed: 'right', width: 220, type: 'actions' }
+      { prop: 'actions', label: '操作', fixed: 'right', width: 280, type: 'actions' }
     ],
     rowActions: [
-      { label: '查看详情', type: 'route', mode: 'view' },
-      { label: '审核', type: 'route', mode: 'edit' },
+      { label: '查看', type: 'route', mode: 'view' },
+      { label: '审核通过', type: 'set-status', field: 'status', value: '已通过' },
+      { label: '退回', type: 'set-status', field: 'status', value: '已退回' },
       { label: '删除', type: 'delete' }
     ],
     rows: expandRows(
@@ -415,9 +449,13 @@ export const crudPageConfigs = {
     title: '达成度评价模型配置',
     description: '配置评价模型、数据来源、阈值和启用状态。',
     breadcrumbs: ['首页', '评价与达成', '达成度评价模型配置'],
+    highlights: [
+      { label: '模型数量', value: '10', desc: '覆盖课程目标与毕业要求两类评价模型。' },
+      { label: '启用模型', value: '07', desc: '当前参与统计计算的模型数量。' },
+      { label: '预警阈值', value: '0.75', desc: '当前默认达成度预警阈值。' }
+    ],
     pageActions: [
-      { label: '新增模型', type: 'primary', behavior: 'dialog' },
-      { label: '复制模型', behavior: 'async' }
+      { label: '新增模型', type: 'primary', behavior: 'dialog' }
     ],
     filters: [
       { prop: 'major', label: '适用专业', type: 'select', options: ['计算机科学与技术', '软件工程', '自动化'] },
@@ -429,15 +467,16 @@ export const crudPageConfigs = {
     columns: [
       { prop: 'name', label: '模型名称', minWidth: 180 },
       { prop: 'major', label: '适用专业', minWidth: 150 },
-      { prop: 'threshold', label: '预警阈值', minWidth: 100 },
-      { prop: 'source', label: '数据来源', minWidth: 140 },
+      { prop: 'threshold', label: '阈值', minWidth: 100 },
+      { prop: 'source', label: '计算规则', minWidth: 140 },
       { prop: 'status', label: '状态', minWidth: 100, type: 'tag', tagType: { 启用: 'success', 停用: 'info' } },
       { prop: 'updatedAt', label: '更新时间', minWidth: 170 },
-      { prop: 'actions', label: '操作', fixed: 'right', width: 180, type: 'actions' }
+      { prop: 'actions', label: '操作', fixed: 'right', width: 240, type: 'actions' }
     ],
     rowActions: [
-      { label: '查看详情', type: 'route', mode: 'view' },
-      { label: '编辑', type: 'route', mode: 'edit' }
+      { label: '编辑', type: 'route', mode: 'edit' },
+      { label: '复制', type: 'copy-row' },
+      { label: '启用/停用', type: 'toggle', field: 'status', values: ['启用', '停用'] }
     ],
     rows: expandRows(
       [
@@ -457,10 +496,10 @@ export const crudPageConfigs = {
       fields: createSchema([
         { prop: 'name', label: '模型名称', type: 'input' },
         { prop: 'major', label: '适用专业', type: 'select', options: ['计算机科学与技术', '软件工程', '自动化'] },
-        { prop: 'source', label: '数据来源', type: 'select', options: ['考核方式权重', '课程目标映射', '历史趋势'] },
-        { prop: 'threshold', label: '预警阈值', type: 'input' },
+        { prop: 'source', label: '计算规则', type: 'select', options: ['考核方式权重', '课程目标映射', '历史趋势'] },
+        { prop: 'threshold', label: '阈值', type: 'input' },
         { prop: 'status', label: '状态', type: 'select', options: enableStatuses },
-        { prop: 'rule', label: '计算规则', type: 'textarea' }
+        { prop: 'rule', label: '规则说明', type: 'textarea' }
       ])
     }
   },
@@ -469,29 +508,33 @@ export const crudPageConfigs = {
     title: '问卷设计与管理',
     description: '维护问卷模板、发布状态、回收进度与对象范围。',
     breadcrumbs: ['首页', '问卷与改进', '问卷设计与管理'],
+    highlights: [
+      { label: '问卷总数', value: '26', desc: '覆盖课程调查、毕业调查与外部评价。' },
+      { label: '发布中', value: '04', desc: '正在进行回收的问卷任务。' },
+      { label: '累计答卷', value: '842', desc: '本学年已回收的有效答卷总数。' }
+    ],
     pageActions: [
-      { label: '新增问卷', type: 'primary', behavior: 'dialog' },
-      { label: '发布问卷', behavior: 'async' }
+      { label: '新增问卷', type: 'primary', behavior: 'dialog' }
     ],
     filters: [
       { prop: 'keyword', label: '问卷名称', type: 'input', placeholder: '搜索问卷名称' },
-      { prop: 'type', label: '问卷类型', type: 'select', options: ['毕业调查', '课程调查', '外部评价'] },
-      { prop: 'status', label: '状态', type: 'select', options: ['草稿', '发布中', '已结束'] }
+      { prop: 'type', label: '类型', type: 'select', options: ['毕业调查', '课程调查', '外部评价'] },
+      { prop: 'status', label: '状态', type: 'select', options: surveyStatuses }
     ],
     keywordFields: ['name'],
     tableTitle: '问卷列表',
     columns: [
       { prop: 'name', label: '问卷名称', minWidth: 220 },
       { prop: 'type', label: '类型', minWidth: 120 },
-      { prop: 'target', label: '填报对象', minWidth: 120 },
+      { prop: 'target', label: '对象', minWidth: 120 },
       { prop: 'status', label: '状态', minWidth: 100, type: 'tag', tagType: { 草稿: 'info', 发布中: 'success', 已结束: 'warning' } },
-      { prop: 'count', label: '回收份数', minWidth: 100 },
+      { prop: 'count', label: '回收量', minWidth: 100 },
       { prop: 'deadline', label: '截止时间', minWidth: 160 },
       { prop: 'actions', label: '操作', fixed: 'right', width: 220, type: 'actions' }
     ],
     rowActions: [
-      { label: '查看详情', type: 'route', mode: 'view' },
-      { label: '编辑', type: 'route', mode: 'edit' },
+      { label: '发布', type: 'set-status', field: 'status', value: '发布中' },
+      { label: '结束', type: 'set-status', field: 'status', value: '已结束' },
       { label: '删除', type: 'delete' }
     ],
     rows: expandRows(
@@ -513,7 +556,8 @@ export const crudPageConfigs = {
         { prop: 'type', label: '问卷类型', type: 'select', options: ['毕业调查', '课程调查', '外部评价'] },
         { prop: 'target', label: '填报对象', type: 'input' },
         { prop: 'deadline', label: '截止时间', type: 'input' },
-        { prop: 'status', label: '状态', type: 'select', options: ['草稿', '发布中', '已结束'] },
+        { prop: 'status', label: '状态', type: 'select', options: surveyStatuses },
+        { prop: 'questionType', label: '题型', type: 'select', options: ['单选', '多选', '量表', '填空'] },
         { prop: 'questions', label: '题目设计', type: 'textarea' }
       ])
     }
@@ -523,9 +567,14 @@ export const crudPageConfigs = {
     title: '持续改进计划',
     description: '维护问题台账、责任人、期限和整改状态。',
     breadcrumbs: ['首页', '问卷与改进', '持续改进计划'],
-    pageActions: [{ label: '新增改进项', type: 'primary', behavior: 'dialog' }],
+    highlights: [
+      { label: '改进事项', value: '32', desc: '已建立的持续改进问题台账数量。' },
+      { label: '执行中', value: '08', desc: '当前处于推进阶段的改进任务。' },
+      { label: '已验证', value: '14', desc: '已闭环验证并完成归档的事项。' }
+    ],
+    pageActions: [{ label: '新增改进单', type: 'primary', behavior: 'dialog' }],
     filters: [
-      { prop: 'status', label: '状态', type: 'select', options: ['待执行', '执行中', '已完成', '已验收'] },
+      { prop: 'status', label: '状态', type: 'select', options: ['待执行', '执行中', '已完成', '已验证'] },
       { prop: 'owner', label: '责任人', type: 'input', placeholder: '搜索责任人' },
       { prop: 'range', label: '期限范围', type: 'daterange' }
     ],
@@ -536,7 +585,7 @@ export const crudPageConfigs = {
       { prop: 'problem', label: '关联问题', minWidth: 240 },
       { prop: 'owner', label: '责任人', minWidth: 110 },
       { prop: 'deadline', label: '期限', minWidth: 120 },
-      { prop: 'status', label: '状态', minWidth: 100, type: 'tag', tagType: { 待执行: 'info', 执行中: 'warning', 已完成: 'success', 已验收: 'success' } },
+      { prop: 'status', label: '状态', minWidth: 100, type: 'tag', tagType: { 待执行: 'info', 执行中: 'warning', 已完成: 'success', 已验证: 'success' } },
       { prop: 'updatedAt', label: '最近跟进', minWidth: 160 },
       { prop: 'actions', label: '操作', fixed: 'right', width: 220, type: 'actions' }
     ],
@@ -565,7 +614,7 @@ export const crudPageConfigs = {
         { prop: 'problem', label: '关联问题', type: 'textarea' },
         { prop: 'owner', label: '责任人', type: 'input' },
         { prop: 'deadline', label: '期限', type: 'input' },
-        { prop: 'status', label: '状态', type: 'select', options: ['待执行', '执行中', '已完成', '已验收'] }
+        { prop: 'status', label: '状态', type: 'select', options: ['待执行', '执行中', '已完成', '已验证'] }
       ])
     }
   }

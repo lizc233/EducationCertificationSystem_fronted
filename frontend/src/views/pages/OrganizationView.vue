@@ -73,19 +73,25 @@ const dialogForm = reactive({
 
 const treeData = [
   {
-    id: 1,
-    label: '计算机学院',
-    children: [{ id: 11, label: '计算机科学与技术' }, { id: 12, label: '软件工程' }, { id: 13, label: '人工智能' }]
-  },
-  {
-    id: 2,
-    label: '自动化学院',
-    children: [{ id: 21, label: '自动化' }, { id: 22, label: '机器人工程' }]
-  },
-  {
-    id: 3,
-    label: '电子信息学院',
-    children: [{ id: 31, label: '电子信息工程' }, { id: 32, label: '通信工程' }]
+    id: 0,
+    label: '学校',
+    children: [
+      {
+        id: 1,
+        label: '计算机学院',
+        children: [{ id: 11, label: '计算机科学与技术' }, { id: 12, label: '软件工程' }, { id: 13, label: '人工智能' }]
+      },
+      {
+        id: 2,
+        label: '自动化学院',
+        children: [{ id: 21, label: '自动化' }, { id: 22, label: '机器人工程' }]
+      },
+      {
+        id: 3,
+        label: '电子信息学院',
+        children: [{ id: 31, label: '电子信息工程' }, { id: 32, label: '通信工程' }]
+      }
+    ]
   }
 ];
 

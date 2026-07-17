@@ -3,16 +3,14 @@
     <div ref="toplineRef" class="portal-topline">
       <div class="portal-topline__inner">
         <div class="portal-link-row">
-          <span>访客</span>
-          <span>校友</span>
-          <span>人才招聘</span>
-          <span>图书馆</span>
-          <span>信息公开</span>
+          <span>工程教育认证智能服务系统</span>
+          <span>统一身份认证</span>
+          <span>消息与待办</span>
         </div>
         <div class="portal-tool-row">
           <span>{{ todayLabel }}</span>
           <span>{{ roleLabel }}</span>
-          <span>工程教育认证办公室</span>
+          <span>{{ roleSlogan }}</span>
         </div>
       </div>
     </div>
@@ -20,11 +18,13 @@
     <header ref="headerRef" class="portal-header">
       <div class="portal-header__inner">
         <div class="portal-brand">
-          <div class="portal-brand__seal">THU</div>
+          <div class="portal-brand__seal">工教</div>
           <div class="portal-brand__text">
-            <div class="portal-brand__en">Engineering Education Accreditation</div>
-            <h1 class="portal-brand__title">工程教育认证系统</h1>
-            <p class="portal-brand__sub">工程教育认证系统 v1.0 | 清华大学工程教育认证办公室</p>
+            <div class="portal-brand__en">教学管理与认证服务平台</div>
+            <h1 class="portal-brand__title">工程教育认证智能服务系统</h1>
+            <p class="portal-brand__sub">
+              围绕培养方案、课程建设、评价达成、选课成绩、问卷改进与报告编制提供统一业务入口。
+            </p>
           </div>
         </div>
 
@@ -40,8 +40,8 @@
               </template>
             </el-input>
           </div>
-          <el-badge :value="6">
-            <el-button @click="router.push('/messages')">通知中心</el-button>
+          <el-badge :value="unreadCount">
+            <el-button @click="router.push('/messages')">消息通知</el-button>
           </el-badge>
           <el-dropdown @command="handleCommand">
             <el-button type="primary">{{ userStore.userInfo.realName || '未登录用户' }}</el-button>
@@ -87,7 +87,7 @@
         >
           <el-menu-item
             v-for="item in currentGroup.items"
-            :key="item.path"
+            :key="item.key"
             :index="item.path"
           >
             {{ item.label }}
@@ -96,33 +96,22 @@
       </div>
     </div>
 
-    <section class="portal-hero">
-      <div class="portal-hero__inner">
+    <section v-if="showHero" class="portal-hero">
+      <div class="portal-hero__inner portal-hero__inner--single">
         <article class="portal-hero__headline">
-          <div class="portal-hero__eyebrow">Engineering Education Accreditation</div>
-          <h2 class="portal-hero__title">{{ currentNav?.label || '工程教育认证系统' }}</h2>
-          <p class="portal-hero__summary">
-            {{ currentNav?.summary || '围绕培养方案、课程体系、达成度评价、问卷改进和自评报告等核心业务，提供统一的认证工作平台。' }}
-          </p>
+          <div class="portal-hero__eyebrow">系统首页</div>
+          <h2 class="portal-hero__title">{{ heroContent.title }}</h2>
+          <p class="portal-hero__summary">{{ heroContent.summary }}</p>
           <div class="portal-hero__meta">
-            <span class="portal-chip">统一路由页面</span>
-            <span class="portal-chip">业务模块化导航</span>
-            <span class="portal-chip">过程数据可视化</span>
+            <span
+              v-for="tag in heroContent.tags"
+              :key="tag"
+              class="portal-chip"
+            >
+              {{ tag }}
+            </span>
           </div>
         </article>
-
-        <div class="portal-hero__aside">
-          <article class="portal-aside-card">
-            <div class="portal-aside-card__label">当前角色</div>
-            <div class="portal-aside-card__value">{{ roleLabel }}</div>
-            <div class="portal-aside-card__text">根据角色权限自动显示可访问模块和菜单项。</div>
-          </article>
-          <article class="portal-aside-card">
-            <div class="portal-aside-card__label">当前模块</div>
-            <div class="portal-aside-card__value">{{ currentGroup.label }}</div>
-            <div class="portal-aside-card__text">一级导航定位业务域，二级导航直达功能页面。</div>
-          </article>
-        </div>
       </div>
     </section>
 
@@ -132,7 +121,7 @@
 
     <footer ref="footerRef" class="portal-footer">
       <div class="portal-footer__inner">
-        <span>© 2026 工程教育认证系统. All Rights Reserved.</span>
+        <span>© 2026 工程教育认证智能服务系统. All Rights Reserved.</span>
       </div>
     </footer>
   </div>
@@ -142,7 +131,15 @@
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import { ElMessage } from 'element-plus';
 import { useRoute, useRouter } from 'vue-router';
-import { navGroups, navs, resolveNavGroup, resolveNavPath } from '../data/navigation';
+import { countUnreadMessages } from '../data/messages';
+import {
+  getSearchableNavItems,
+  getVisibleNavGroups,
+  resolveNavGroup,
+  resolveNavItem,
+  resolveNavPath,
+  ROLES
+} from '../data/navigation';
 import { ROLE_LABEL_MAP, useUserStore } from '../store/user';
 
 const route = useRoute();
@@ -157,30 +154,62 @@ const secondaryNavRef = ref();
 const footerRef = ref();
 const chromeHeight = ref(0);
 
-const resolvedNavPath = computed(() => resolveNavPath(String(route.query.from || route.path)));
-
-const visibleGroups = computed(() =>
-  navGroups
-    .map((group) => {
-      const items = group.items.filter((item) => item.roles.includes(userStore.userInfo.role));
-      return {
-        ...group,
-        items,
-        defaultPath: items[0]?.path || ''
-      };
-    })
-    .filter((group) => group.items.length)
-);
-
-const currentNav = computed(() => navs.find((item) => item.path === resolvedNavPath.value));
+const currentRole = computed(() => userStore.userInfo.role || ROLES.SUPER);
+const resolvedNavPath = computed(() => resolveNavPath(String(route.query.from || route.path), currentRole.value));
+const visibleGroups = computed(() => getVisibleNavGroups(currentRole.value));
+const currentNav = computed(() => resolveNavItem(resolvedNavPath.value, currentRole.value));
+const currentGroupMeta = computed(() => resolveNavGroup(resolvedNavPath.value, currentRole.value));
 const currentGroup = computed(() => {
-  return resolveNavGroup(resolvedNavPath.value);
+  return visibleGroups.value.find((group) => group.label === currentGroupMeta.value.label)
+    || visibleGroups.value.find((group) => group.items.some((item) => item.path === resolvedNavPath.value))
+    || visibleGroups.value[0]
+    || { label: '首页概览', items: [], defaultPath: '/dashboard' };
 });
-const activePrimary = computed(() => currentGroup.value.items[0]?.path || '/dashboard');
-const activeSecondary = computed(() => resolvedNavPath.value);
+const showHero = computed(() => resolvedNavPath.value === '/dashboard');
+const activePrimary = computed(() => currentGroup.value.defaultPath || visibleGroups.value[0]?.defaultPath || '/dashboard');
+const activeSecondary = computed(() => {
+  return currentGroup.value.items.some((item) => item.path === resolvedNavPath.value) ? resolvedNavPath.value : '';
+});
 const mainMinHeight = computed(() => `calc(100vh - ${chromeHeight.value}px)`);
+const unreadCount = computed(() => countUnreadMessages());
+const roleLabel = computed(() => ROLE_LABEL_MAP[currentRole.value] || '未分配角色');
 
-const roleLabel = computed(() => ROLE_LABEL_MAP[userStore.userInfo.role] || '未分配角色');
+const heroContent = computed(() => {
+  if (currentRole.value === ROLES.TEACHER) {
+    return {
+      title: '教学工作总览',
+      summary: '集中处理课程安排、成绩提交、课程资源、课表提醒与学生反馈，保持教学事项闭环办理。',
+      tags: ['课程任务', '成绩提交', '教学通知', '反馈查看']
+    };
+  }
+
+  if (currentRole.value === ROLES.STUDENT) {
+    return {
+      title: '学习服务总览',
+      summary: '集中查看选课、课表、成绩、课程公告与学业进度，常用学习事项在同一入口完成。',
+      tags: ['选课办理', '成绩查询', '学习进度', '课程评价']
+    };
+  }
+
+  return {
+    title: '认证业务管理总览',
+    summary: '集中查看培养方案、课程建设、评价分析、选课成绩、问卷改进与报告工作，支持全局管理与过程监控。',
+    tags: ['统一入口', '业务联动', '过程留痕', '数据总览']
+  };
+});
+
+const roleSlogan = computed(() => {
+  if (currentRole.value === ROLES.TEACHER) {
+    return '教学执行视图';
+  }
+
+  if (currentRole.value === ROLES.STUDENT) {
+    return '学习服务视图';
+  }
+
+  return '管理监控视图';
+});
+
 const todayLabel = computed(() => {
   const now = new Date();
   const year = now.getFullYear();
@@ -218,7 +247,10 @@ function goSearch() {
     return;
   }
 
-  const hit = navs.find((item) => item.label.includes(keyword) || item.summary.includes(keyword));
+  const hit = getSearchableNavItems(currentRole.value).find((item) => {
+    return item.label.includes(keyword) || item.summary.includes(keyword) || item.groupLabel.includes(keyword);
+  });
+
   if (!hit) {
     ElMessage.warning('未找到匹配页面');
     return;
@@ -234,7 +266,7 @@ async function handleCommand(command) {
   }
 
   userStore.logout();
-  await router.push('/login');
+  await router.push({ path: '/login', query: { reset: String(Date.now()) } });
 }
 
 onMounted(async () => {
