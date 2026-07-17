@@ -3,7 +3,7 @@
     <section class="page-shell px-6 py-6 sm:px-8">
       <div class="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
         <div class="max-w-[820px]">
-          <p class="text-[12px] uppercase tracking-[0.3em] text-[var(--text-3)]">Module Overview</p>
+          <p class="text-[12px] uppercase tracking-[0.3em] text-[var(--text-3)]">业务概览</p>
           <h2 class="serif-title mt-3 text-[30px] text-[var(--text-1)] sm:text-[34px]">{{ cur.title }}</h2>
           <p class="mt-3 text-[14px] leading-7 text-[var(--text-2)]">{{ cur.desc }}</p>
         </div>
@@ -11,7 +11,7 @@
         <div class="flex flex-wrap gap-2">
           <span class="small-tag tag-blue">{{ roleLabel }}</span>
           <span class="small-tag" :class="readOnly ? 'tag-yellow' : 'tag-green'">
-            {{ readOnly ? '当前只读' : '允许查看' }}
+            {{ readOnly ? '查询模式' : '可办理' }}
           </span>
         </div>
       </div>
@@ -21,7 +21,7 @@
       v-if="!allow"
       class="rounded-[20px] border border-[rgba(197,48,48,0.22)] bg-[rgba(197,48,48,0.08)] px-5 py-4 text-[14px] leading-7 text-[var(--danger)]"
     >
-      当前账号没有访问此模块的权限，请切换到拥有对应角色的测试账号后再进入。
+      当前账号没有访问此模块的权限，请切换具备相应角色的账号后再访问。
     </article>
 
     <template v-else>
@@ -29,7 +29,7 @@
         v-if="readOnly"
         class="rounded-[20px] border border-[rgba(163,106,30,0.24)] bg-[rgba(163,106,30,0.08)] px-5 py-4 text-[14px] leading-7 text-[var(--accent-gold)]"
       >
-        当前页面处于只读演示状态，仅展示前端 Mock 数据，不支持真实写入。
+        当前页面在本业务周期内仅开放查询，如需调整数据，请通过对应业务流程提交。
       </article>
 
       <section class="grid gap-6 xl:grid-cols-[1.02fr_0.98fr]">
@@ -37,7 +37,7 @@
           <div class="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
             <div>
               <h3 class="section-title text-[22px]">当前情况</h3>
-              <p class="section-sub mt-2">先看当前模块的关键数量、状态和页面使用说明。</p>
+              <p class="section-sub mt-2">查看本模块的关键数量、处理状态和近期同步情况。</p>
             </div>
             <span class="small-tag tag-blue">模块概览</span>
           </div>
@@ -71,11 +71,11 @@
         <article class="page-box px-6 py-6">
           <div class="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
             <div>
-              <h3 class="section-title text-[22px]">页面说明</h3>
-              <p class="section-sub mt-2">保留实用导向，明确当前模块在演示版中的定位。</p>
+              <h3 class="section-title text-[22px]">办理说明</h3>
+              <p class="section-sub mt-2">说明当前模块的办理范围、使用方式和后续扩展方向。</p>
             </div>
             <span class="small-tag" :class="readOnly ? 'tag-yellow' : 'tag-green'">
-              Mock 页面
+              功能页
             </span>
           </div>
 
@@ -112,9 +112,9 @@
           <div class="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
             <div>
               <h3 class="section-title text-[22px]">重点观察</h3>
-              <p class="section-sub mt-2">通过卡片方式快速定位当前模块的重点指标。</p>
+              <p class="section-sub mt-2">通过卡片快速定位当前模块需要跟进的指标和状态。</p>
             </div>
-            <span class="small-tag tag-green">{{ cur.rows.length }} 个指标</span>
+            <span class="small-tag tag-green">{{ cur.rows.length }} 项指标</span>
           </div>
 
           <div class="mt-5 space-y-4">
@@ -138,7 +138,7 @@
           <div class="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
             <div>
               <h3 class="section-title text-[22px]">近期事项</h3>
-              <p class="section-sub mt-2">当前模块预留的近期任务和页面扩展计划。</p>
+              <p class="section-sub mt-2">查看当前模块已安排的工作项、责任人和时间节点。</p>
             </div>
             <span class="small-tag tag-blue">{{ cur.task.length }} 项安排</span>
           </div>
@@ -148,7 +148,7 @@
               <thead>
                 <tr class="bg-[rgba(127,29,45,0.06)] text-[13px] text-[var(--text-2)]">
                   <th class="px-4 py-3 font-medium">事项</th>
-                  <th class="px-4 py-3 font-medium">负责人</th>
+                  <th class="px-4 py-3 font-medium">责任人</th>
                   <th class="px-4 py-3 font-medium">时间</th>
                   <th class="px-4 py-3 font-medium">状态</th>
                 </tr>
@@ -196,7 +196,7 @@ const roleLabel = computed(() => ROLE_LABEL_MAP[userStore.userInfo.role] || '未
 function tagCls(value) {
   if (['需关注', '待接入'].includes(value)) return 'tag-red';
   if (['处理中', '待确认', '待处理'].includes(value)) return 'tag-yellow';
-  if (['正常', '已同步', '已排期'].includes(value)) return 'tag-green';
+  if (['正常', '已同步', '已排期', '已开放'].includes(value)) return 'tag-green';
   return 'tag-blue';
 }
 </script>

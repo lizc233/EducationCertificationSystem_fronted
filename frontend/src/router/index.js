@@ -27,12 +27,24 @@ import MyTeachingView from '../views/pages/MyTeachingView.vue';
 import MyCoursesView from '../views/pages/MyCoursesView.vue';
 import MyScoresView from '../views/pages/MyScoresView.vue';
 import MyAchievementView from '../views/pages/MyAchievementView.vue';
+import CourseSelectionManagementView from '../views/pages/CourseSelectionManagementView.vue';
+import ScoreAuditView from '../views/pages/ScoreAuditView.vue';
+import AnnouncementsView from '../views/pages/AnnouncementsView.vue';
+import CourseStudentsView from '../views/pages/CourseStudentsView.vue';
+import MyScheduleView from '../views/pages/MyScheduleView.vue';
+import CourseAnnouncementsView from '../views/pages/CourseAnnouncementsView.vue';
+import TeachingFeedbackView from '../views/pages/TeachingFeedbackView.vue';
+import CourseSelectionView from '../views/pages/CourseSelectionView.vue';
+import CourseAnnouncementsFeedView from '../views/pages/CourseAnnouncementsFeedView.vue';
+import AcademicProgressView from '../views/pages/AcademicProgressView.vue';
+import CourseEvaluateView from '../views/pages/CourseEvaluateView.vue';
 
 const appTitle = '工程教育认证智能服务系统';
 const allRoles = [ROLES.SUPER, ROLES.TEACHER, ROLES.STUDENT];
 const superOnly = [ROLES.SUPER];
 const teacherOnly = [ROLES.TEACHER];
 const studentOnly = [ROLES.STUDENT];
+const teacherAndStudent = [ROLES.TEACHER, ROLES.STUDENT];
 const superAndTeacher = [ROLES.SUPER, ROLES.TEACHER];
 
 const pageRoutes = [
@@ -41,6 +53,7 @@ const pageRoutes = [
   { path: 'organization', name: 'organization', component: OrganizationView, meta: { title: '组织架构', roles: superOnly } },
   { path: 'params', name: 'params', component: ConfigCrudPageView, props: { pageKey: 'params' }, meta: { title: '系统参数', roles: superOnly } },
   { path: 'logs', name: 'logs', component: ConfigCrudPageView, props: { pageKey: 'logs' }, meta: { title: '操作日志', roles: superOnly } },
+  { path: 'announcements', name: 'announcements', component: AnnouncementsView, meta: { title: '系统公告管理', roles: superOnly } },
   { path: 'program', name: 'program', component: ConfigCrudPageView, props: { pageKey: 'program' }, meta: { title: '方案管理', roles: superOnly } },
   { path: 'program/goals', name: 'program-goals', component: ProgramGoalsView, meta: { title: '培养目标与毕业要求', roles: superOnly } },
   { path: 'program/courses', name: 'program-courses', component: ProgramCoursesView, meta: { title: '课程体系与支撑矩阵', roles: superOnly } },
@@ -50,11 +63,13 @@ const pageRoutes = [
   { path: 'teaching', name: 'teaching', component: ConfigCrudPageView, props: { pageKey: 'teaching' }, meta: { title: '授课任务分配', roles: superOnly } },
   { path: 'courses/resources', name: 'course-resources', component: CourseResourcesView, meta: { title: '课程资源管理', roles: superOnly } },
   { path: 'evaluation/materials', name: 'evaluation-materials', component: ConfigCrudPageView, props: { pageKey: 'evaluation-materials' }, meta: { title: '考核证据材料管理', roles: superAndTeacher } },
-  { path: 'evaluation/scores', name: 'evaluation-scores', component: EvaluationScoresView, meta: { title: '按课程目标成绩管理', roles: superAndTeacher } },
+  { path: 'evaluation/scores', name: 'evaluation-scores', component: EvaluationScoresView, meta: { title: '按课程目标成绩管理', roles: superOnly } },
   { path: 'achievement/model', name: 'achievement-model', component: ConfigCrudPageView, props: { pageKey: 'achievement-model' }, meta: { title: '达成度评价模型配置', roles: superOnly } },
   { path: 'achievement/course', name: 'achievement-course', component: AchievementCourseView, meta: { title: '课程目标达成度评价', roles: superOnly } },
   { path: 'achievement/graduate', name: 'achievement-graduate', component: AchievementGraduateView, meta: { title: '毕业要求达成度评价与预警', roles: superOnly } },
   { path: 'achievement/dashboard', name: 'achievement-dashboard', component: AchievementDashboardView, meta: { title: '达成度统计分析看板', roles: superOnly } },
+  { path: 'course-selection-management', name: 'course-selection-management', component: CourseSelectionManagementView, meta: { title: '选课管理', roles: superOnly } },
+  { path: 'score-audit', name: 'score-audit', component: ScoreAuditView, meta: { title: '成绩审核', roles: superOnly } },
   { path: 'survey', name: 'survey', component: ConfigCrudPageView, props: { pageKey: 'survey' }, meta: { title: '问卷设计与管理', roles: superOnly } },
   { path: 'survey/fill', name: 'survey-fill', component: SurveyFillView, meta: { title: '问卷填报与统计', roles: allRoles } },
   { path: 'improve', name: 'improve', component: ConfigCrudPageView, props: { pageKey: 'improve' }, meta: { title: '持续改进计划', roles: superAndTeacher } },
@@ -63,9 +78,18 @@ const pageRoutes = [
   { path: 'messages', name: 'messages', component: MessagesView, meta: { title: '消息通知中心', roles: allRoles } },
   { path: 'profile', name: 'profile', component: Profile, meta: { title: '个人设置', roles: allRoles } },
   { path: 'my-teaching', name: 'my-teaching', component: MyTeachingView, meta: { title: '我的授课任务', roles: teacherOnly } },
-  { path: 'my-courses', name: 'my-courses', component: MyCoursesView, meta: { title: '课程资源管理', roles: teacherOnly } },
+  { path: 'my-courses', name: 'my-courses', component: MyCoursesView, meta: { title: '我的课程', roles: [ROLES.TEACHER, ROLES.STUDENT] } },
+  { path: 'my-schedule', name: 'my-schedule', component: MyScheduleView, meta: { title: '我的课表', roles: teacherAndStudent } },
+  { path: 'course-students', name: 'course-students', component: CourseStudentsView, meta: { title: '课程学生名单', roles: teacherOnly } },
+  { path: 'course-announcements', name: 'course-announcements', component: CourseAnnouncementsView, meta: { title: '课程公告', roles: teacherOnly } },
+  { path: 'score-input', name: 'score-input', component: EvaluationScoresView, meta: { title: '成绩录入与提交', roles: teacherOnly } },
+  { path: 'teaching-feedback', name: 'teaching-feedback', component: TeachingFeedbackView, meta: { title: '教学反馈查看', roles: teacherOnly } },
+  { path: 'course-selection', name: 'course-selection', component: CourseSelectionView, meta: { title: '选课中心', roles: studentOnly } },
+  { path: 'course-announcements-view', name: 'course-announcements-view', component: CourseAnnouncementsFeedView, meta: { title: '课程公告查看', roles: studentOnly } },
   { path: 'my-scores', name: 'my-scores', component: MyScoresView, meta: { title: '我的成绩', roles: studentOnly } },
+  { path: 'academic-progress', name: 'academic-progress', component: AcademicProgressView, meta: { title: '学业进度', roles: studentOnly } },
   { path: 'my-achievement', name: 'my-achievement', component: MyAchievementView, meta: { title: '我的达成度报告', roles: studentOnly } },
+  { path: 'course-evaluate', name: 'course-evaluate', component: CourseEvaluateView, meta: { title: '课程评价', roles: studentOnly } },
   {
     path: 'records/:pageKey/:mode/:id',
     name: 'record-workspace',
@@ -101,18 +125,22 @@ const router = createRouter({
 });
 
 const accessFallbackMap = {
-  '/my-teaching': {
-    [ROLES.SUPER]: '/teaching'
-  },
-  '/my-courses': {
-    [ROLES.SUPER]: '/courses/resources'
-  },
-  '/my-scores': {
-    [ROLES.SUPER]: '/evaluation/scores'
-  },
-  '/my-achievement': {
-    [ROLES.SUPER]: '/achievement/course'
-  }
+  '/my-teaching': { [ROLES.SUPER]: '/teaching', [ROLES.STUDENT]: '/dashboard' },
+  '/my-courses': { [ROLES.SUPER]: '/courses/resources' },
+  '/my-schedule': { [ROLES.SUPER]: '/dashboard' },
+  '/course-students': { [ROLES.SUPER]: '/teaching', [ROLES.STUDENT]: '/dashboard' },
+  '/course-announcements': { [ROLES.SUPER]: '/announcements', [ROLES.STUDENT]: '/course-announcements-view' },
+  '/score-input': { [ROLES.SUPER]: '/evaluation/scores', [ROLES.STUDENT]: '/dashboard' },
+  '/teaching-feedback': { [ROLES.SUPER]: '/survey/fill', [ROLES.STUDENT]: '/dashboard' },
+  '/course-selection': { [ROLES.SUPER]: '/course-selection-management', [ROLES.TEACHER]: '/dashboard' },
+  '/course-announcements-view': { [ROLES.SUPER]: '/announcements', [ROLES.TEACHER]: '/course-announcements' },
+  '/my-scores': { [ROLES.SUPER]: '/evaluation/scores', [ROLES.TEACHER]: '/score-input' },
+  '/academic-progress': { [ROLES.SUPER]: '/achievement/dashboard', [ROLES.TEACHER]: '/dashboard' },
+  '/my-achievement': { [ROLES.SUPER]: '/achievement/course', [ROLES.TEACHER]: '/report' },
+  '/course-evaluate': { [ROLES.SUPER]: '/survey/fill', [ROLES.TEACHER]: '/teaching-feedback' },
+  '/course-selection-management': { [ROLES.TEACHER]: '/dashboard', [ROLES.STUDENT]: '/course-selection' },
+  '/score-audit': { [ROLES.TEACHER]: '/score-input', [ROLES.STUDENT]: '/my-scores' },
+  '/announcements': { [ROLES.TEACHER]: '/course-announcements', [ROLES.STUDENT]: '/course-announcements-view' }
 };
 
 router.beforeEach(async (to) => {

@@ -3,10 +3,10 @@
     <section class="page-shell px-6 py-6 sm:px-8">
       <div class="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <p class="text-[12px] uppercase tracking-[0.32em] text-[var(--text-3)]">User Management</p>
+          <p class="text-[12px] uppercase tracking-[0.32em] text-[var(--text-3)]">基础管理</p>
           <h2 class="serif-title mt-3 text-[30px] text-[var(--text-1)]">用户管理</h2>
           <p class="mt-3 text-[14px] leading-7 text-[var(--text-2)]">
-            当前页面全部使用前端 Mock 数据，仅用于展示筛选、表格、分页和弹窗交互效果。
+            统一维护账号、角色、院系与启停状态，支持筛选查询、分页浏览和信息维护。
           </p>
         </div>
       </div>

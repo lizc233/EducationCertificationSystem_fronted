@@ -66,20 +66,13 @@
 
     <div class="dashboard-grid dashboard-grid--equal">
       <SectionCard :title="dashboardContent.leftBottomTitle">
-        <template v-if="isStudent">
-          <div class="study-progress-card">
-            <div class="study-progress-card__header">
-              <div>
-                <div class="study-progress-card__label">学业进度</div>
-                <div class="study-progress-card__value">86 / 150 学分</div>
-              </div>
-              <el-tag type="success">进度稳定</el-tag>
-            </div>
-            <el-progress :percentage="57" :stroke-width="16" />
-            <div class="study-progress-card__meta">
-              <span>本学期已修 18 学分</span>
-              <span>待修核心课程 4 门</span>
-            </div>
+        <template v-if="isSuper">
+          <div class="system-status-board">
+            <article v-for="item in dashboardContent.leftBottomList" :key="item.title" class="status-board__item">
+              <div class="status-board__title">{{ item.title }}</div>
+              <div class="status-board__value">{{ item.value }}</div>
+              <div class="status-board__desc">{{ item.desc }}</div>
+            </article>
           </div>
         </template>
         <template v-else-if="isTeacher">
@@ -90,31 +83,51 @@
                   <div class="dashboard-action__title">{{ item.title }}</div>
                   <div class="dashboard-action__desc">{{ item.desc }}</div>
                 </div>
-                <el-tag :type="item.tagType || 'info'">{{ item.tag }}</el-tag>
+                <el-tag :type="item.tagType">{{ item.tag }}</el-tag>
               </div>
             </article>
           </div>
         </template>
         <template v-else>
-          <div class="system-status-board">
-            <article v-for="item in dashboardContent.leftBottomList" :key="item.title" class="status-board__item">
-              <div class="status-board__title">{{ item.title }}</div>
-              <div class="status-board__value">{{ item.value }}</div>
-              <div class="status-board__desc">{{ item.desc }}</div>
-            </article>
+          <div class="study-progress-card">
+            <div class="study-progress-card__header">
+              <div>
+                <div class="study-progress-card__label">学分完成情况</div>
+                <div class="study-progress-card__value">86 / 150 学分</div>
+              </div>
+              <el-tag type="success">57%</el-tag>
+            </div>
+            <el-progress :percentage="57" :stroke-width="16" />
+            <div class="study-progress-card__meta">
+              <span>公共课 34 学分</span>
+              <span>专业课 42 学分</span>
+              <span>选修课 10 学分</span>
+            </div>
           </div>
         </template>
       </SectionCard>
 
       <SectionCard :title="dashboardContent.rightBottomTitle">
-        <template v-if="isSuper">
+        <template v-if="isTeacher">
+          <el-table :data="teacherCourseRows" border stripe>
+            <el-table-column prop="course" label="课程" min-width="150" />
+            <el-table-column prop="className" label="班级" min-width="120" />
+            <el-table-column prop="schedule" label="上课时间" min-width="140" />
+            <el-table-column prop="status" label="状态" min-width="110">
+              <template #default="{ row }">
+                <el-tag :type="row.status === '待审核' ? 'warning' : 'success'">{{ row.status }}</el-tag>
+              </template>
+            </el-table-column>
+          </el-table>
+        </template>
+        <template v-else>
           <div class="list-panel">
             <button
               v-for="item in dashboardContent.rightBottomList"
               :key="item.title"
               type="button"
               class="list-item dashboard-action"
-              @click="router.push('/messages')"
+              @click="item.path ? router.push(item.path) : undefined"
             >
               <div class="dashboard-action__row">
                 <div>
@@ -124,31 +137,6 @@
                 <div class="dashboard-action__time">{{ item.time }}</div>
               </div>
             </button>
-          </div>
-        </template>
-        <template v-else-if="isTeacher">
-          <el-table :data="teacherCourseRows" border stripe>
-            <el-table-column prop="course" label="课程" min-width="150" />
-            <el-table-column prop="className" label="班级" min-width="120" />
-            <el-table-column prop="schedule" label="时间" min-width="140" />
-            <el-table-column prop="status" label="状态" min-width="110">
-              <template #default="{ row }">
-                <el-tag :type="row.status === '待录成绩' ? 'warning' : 'success'">{{ row.status }}</el-tag>
-              </template>
-            </el-table-column>
-          </el-table>
-        </template>
-        <template v-else>
-          <div class="list-panel">
-            <article v-for="item in dashboardContent.rightBottomList" :key="item.title" class="list-item">
-              <div class="dashboard-action__row">
-                <div>
-                  <div class="dashboard-action__title">{{ item.title }}</div>
-                  <div class="dashboard-action__desc">{{ item.desc }}</div>
-                </div>
-                <div class="dashboard-action__time">{{ item.time }}</div>
-              </div>
-            </article>
           </div>
         </template>
       </SectionCard>
@@ -169,119 +157,124 @@ const userStore = useUserStore();
 
 const isSuper = computed(() => userStore.userInfo.role === ROLES.SUPER);
 const isTeacher = computed(() => userStore.userInfo.role === ROLES.TEACHER);
-const isStudent = computed(() => userStore.userInfo.role === ROLES.STUDENT);
 
 const teacherCourseRows = [
-  { course: '软件工程', className: '软工 2301', schedule: '周一 1-2 节', status: '待录成绩' },
-  { course: '需求分析与建模', className: '软工 2302', schedule: '周三 3-4 节', status: '进行中' },
-  { course: '课程设计', className: '软工 2303', schedule: '周五 1-2 节', status: '进行中' }
+  { course: '软件工程', className: '软工 2301', schedule: '周一 1-2 节', status: '待审核' },
+  { course: '软件工程', className: '软工 2302', schedule: '周二 3-4 节', status: '待审核' },
+  { course: '需求分析与建模', className: '软工 2301', schedule: '周三 1-2 节', status: '进行中' },
+  { course: '课程设计', className: '软工 2303', schedule: '周四 1-4 节', status: '进行中' }
 ];
 
 const dashboardContent = computed(() => {
   if (isTeacher.value) {
     return {
-      description: '围绕个人授课任务、成绩录入、资源上传和教学提醒组织首页内容。',
+      description: '围绕课程、课表、成绩提交、学生名单和课程公告组织教师首页内容。',
       actions: [
-        { label: '进入我的授课', path: '/my-teaching', type: 'primary' },
-        { label: '进入成绩录入', path: '/evaluation/scores' }
+        { label: '进入我的课程', path: '/my-courses', type: 'primary' },
+        { label: '进入成绩录入', path: '/score-input' }
       ],
       metrics: [
-        { label: '我的授课数', value: '06', trend: 12, sub: '覆盖 3 个年级、8 个教学班。' },
-        { label: '待录入成绩课程数', value: '02', trend: -8, sub: '需在 2026-07-19 前完成提交锁定。' },
-        { label: '未读通知数', value: '05', trend: 20, sub: '包含成绩提交提醒和问卷填报消息。' }
+        { label: '我的课程数', value: '6', trend: 8, sub: '本学期共承担 6 门课程。' },
+        { label: '待审核成绩数', value: '2', trend: -10, sub: '已有 2 个批次提交后待教务审核。' },
+        { label: '未读通知数', value: '5', trend: 16, sub: '包括课程公告、审核提醒和问卷消息。' },
+        { label: '今日课程数', value: '3', trend: 0, sub: '今天共有 3 次授课安排。' }
       ],
       quickTitle: '快捷入口',
       quickEntries: [
-        { path: '/my-teaching', label: '我的授课', summary: '查看本学期授课任务、班级安排和课堂提醒。', group: '我的工作台' },
-        { path: '/evaluation/scores', label: '成绩录入', summary: '按课程目标录入成绩并提交锁定。', group: '成绩管理' },
-        { path: '/my-courses', label: '课程资源', summary: '上传课件、作业、实验指导和教学资料。', group: '我的工作台' }
+        { path: '/my-courses', label: '我的课程', summary: '查看任教课程、班级人数和资源入口。', group: '我的工作台' },
+        { path: '/my-schedule', label: '我的课表', summary: '查看本周上课时间、教室和节次安排。', group: '我的工作台' },
+        { path: '/course-students', label: '课程学生名单', summary: '查看学生名单并导出。', group: '我的工作台' },
+        { path: '/course-announcements', label: '课程公告', summary: '向班级发布课程通知和作业提醒。', group: '我的工作台' }
       ],
       rightTitle: '今日待办',
       rightList: [
-        { title: '软件工程 2301 成绩待提交', desc: '请在今晚 18:00 前完成课程目标成绩锁定。', time: '今天', path: '/evaluation/scores' },
-        { title: '课程资源补充提醒', desc: '《需求分析与建模》缺少实验指导书，请尽快上传。', time: '今天', path: '/my-courses' },
-        { title: '教师问卷待填报', desc: '课程达成度反馈问卷尚未完成。', time: '07-18', path: '/survey/fill' }
+        { title: '今天 08:00 软件工程 2301 上课', desc: '主楼 402，课前请确认项目资料。', time: '2026-07-17', path: '/my-schedule' },
+        { title: '成绩提交审核提醒', desc: '软件工程 2301 批次已于 2026 年 7 月 17 日上午提交，当前待审核。', time: '2026-07-17', path: '/score-input' },
+        { title: '课程公告待发布', desc: '需求分析与建模第 6 周公告尚未发布。', time: '2026-07-17', path: '/course-announcements' }
       ],
       leftBottomTitle: '通知公告',
       leftBottomList: [
-        { title: '教学巡检提示', desc: '本周需要补齐 2 门课程的考核材料与资源目录。', tag: '待处理', tagType: 'warning' },
-        { title: '成绩提交规范更新', desc: '课程目标成绩表新增锁定校验项，请按新模板处理。', tag: '已发布', tagType: 'success' },
-        { title: '学生问卷回收提醒', desc: '软件工程 2302 班问卷回收率已达到 68%。', tag: '跟进中', tagType: 'info' }
+        { title: '教务提醒', desc: '教师成绩批次需在 2026 年 7 月 18 日 18:00 前完成提交。', tag: '待处理', tagType: 'warning' },
+        { title: '课程反馈回收', desc: '软件工程 2302 的反馈问卷回收率已达 68%。', tag: '进行中', tagType: 'success' },
+        { title: '资源补充提醒', desc: '课程设计答辩安排表仍需补充附件。', tag: '待补充', tagType: 'info' }
       ],
       rightBottomTitle: '我的课程'
     };
   }
 
-  if (isStudent.value) {
+  if (!isSuper.value) {
     return {
-      description: '聚焦成绩查询、达成度报告、问卷填报和个人学业进度。',
+      description: '围绕选课、课表、成绩、课程评价和学业进度组织学生首页内容。',
       actions: [
-        { label: '查看我的成绩', path: '/my-scores', type: 'primary' },
-        { label: '查看达成度报告', path: '/my-achievement' }
+        { label: '前往选课中心', path: '/course-selection', type: 'primary' },
+        { label: '查看学业进度', path: '/academic-progress' }
       ],
       metrics: [
-        { label: '已修学分', value: '86', trend: 6, sub: '占培养方案总学分的 57%。' },
-        { label: '平均成绩', value: '88.5', trend: 3, sub: '最近一学期较上学期提升 2.4 分。' },
-        { label: '待完成问卷数', value: '02', trend: -20, sub: '毕业要求反馈与课程资源反馈待填写。' }
+        { label: '已选课程数', value: '10', trend: 12, sub: '本学期已选 10 门课程。' },
+        { label: '待评价课程数', value: '2', trend: -20, sub: '请在 2026 年 7 月 22 日前完成课程评价。' },
+        { label: '待完成问卷数', value: '2', trend: -10, sub: '包括课程评价问卷和满意度调查。' },
+        { label: '平均成绩', value: '88.5', trend: 3, sub: '较上一学期提升 2.4 分。' }
       ],
       quickTitle: '快捷入口',
       quickEntries: [
-        { path: '/my-scores', label: '我的成绩', summary: '查看课程成绩、绩点和最新发布结果。', group: '我的学习' },
-        { path: '/my-achievement', label: '达成度报告', summary: '查看课程目标达成情况和改进建议。', group: '我的学习' },
-        { path: '/survey/fill', label: '问卷填报', summary: '参与课程与毕业要求反馈问卷。', group: '问卷填报' }
+        { path: '/course-selection', label: '选课中心', summary: '查看可选课程、容量和截止时间。', group: '我的学习' },
+        { path: '/my-schedule', label: '我的课表', summary: '查看本周课程安排和上课时间。', group: '我的学习' },
+        { path: '/course-evaluate', label: '课程评价', summary: '对已修课程进行评分和文字反馈。', group: '课程评价' },
+        { path: '/my-scores', label: '我的成绩', summary: '查看课程成绩和各考核项明细。', group: '我的学习' }
       ],
       rightTitle: '最新成绩',
       rightList: [
-        { title: '软件工程', desc: '课程总评 91 分，课程目标 2 表现突出。', time: '07-16' },
-        { title: '数据库原理', desc: '课程总评 86 分，实验报告部分已完成复核。', time: '07-15' },
-        { title: '计算机网络', desc: '课程总评 89 分，已开放成绩明细查看。', time: '07-13' }
+        { title: '软件工程', desc: '总评 91 分，项目实践表现较好。', time: '2026-07-16', path: '/my-scores' },
+        { title: '数据库原理', desc: '总评 86 分，实验成绩已复核。', time: '2026-07-15', path: '/my-scores' },
+        { title: '计算机网络', desc: '总评 89 分，已开放明细查看。', time: '2026-07-13', path: '/my-scores' }
       ],
       leftBottomTitle: '学业进度',
       rightBottomTitle: '通知公告',
       rightBottomList: [
-        { title: '毕业要求满意度问卷发布', desc: '请于 2026-07-22 前完成填报。', time: '今天' },
-        { title: '课程成绩复核开放', desc: '数据库原理成绩复核申请入口已开放。', time: '07-16' },
-        { title: '暑期实践提醒', desc: '实践课程材料提交截止到 2026-07-25。', time: '07-15' }
+        { title: '系统公告：暑期选课开放通知', desc: '2026 年 7 月 18 日 08:00 起开放暑期选课。', time: '2026-07-17', path: '/course-selection' },
+        { title: '课程公告：软件工程项目分组公布', desc: '请在 2026 年 7 月 18 日前完成组队确认。', time: '2026-07-17', path: '/course-announcements-view' },
+        { title: '课程公告：数据库原理实验三说明', desc: '实验报告提交截止为 2026 年 7 月 20 日。', time: '2026-07-16', path: '/course-announcements-view' }
       ]
     };
   }
 
   return {
-    description: '面向认证管理与过程监控，聚合展示关键数据、审核事项、系统状态和通知公告。',
+    description: '面向认证管理、选课调度和成绩审核，聚合展示关键数据、待办事项和系统公告。',
     actions: [
-      { label: '进入方案管理', path: '/program', type: 'primary' },
-      { label: '查看达成看板', path: '/achievement/dashboard' }
+      { label: '进入选课管理', path: '/course-selection-management', type: 'primary' },
+      { label: '查看成绩审核', path: '/score-audit' }
     ],
     metrics: [
       { label: '总用户数', value: '128', trend: 8, sub: '覆盖管理员、教师与学生三类账号。' },
       { label: '进行中方案数', value: '18', trend: 11, sub: '含启用版本与待归档版本。' },
-      { label: '待处理预警数', value: '07', trend: -5, sub: '低于阈值的达成度与回收率问题。' },
-      { label: '进行中问卷数', value: '04', trend: 15, sub: '处于发布和回收阶段的问卷任务。' }
+      { label: '待处理预警数', value: '7', trend: -5, sub: '低于阈值的达成度与回收率问题。' },
+      { label: '进行中选课任务数', value: '6', trend: 12, sub: '当前开放中的课程选课任务。' },
+      { label: '进行中问卷数', value: '4', trend: 15, sub: '处于发布和回收阶段的问卷任务。' }
     ],
     quickTitle: '快捷入口',
     quickEntries: [
-      { path: '/users', label: '用户管理', summary: '维护账号、角色、院系信息和启停状态。', group: '基础管理' },
-      { path: '/program', label: '方案管理', summary: '维护培养方案版本与适用年级。', group: '方案与课程' },
-      { path: '/achievement/course', label: '达成度评价', summary: '查看课程目标与毕业要求达成情况。', group: '评价与达成' },
+      { path: '/users', label: '用户管理', summary: '维护账号、角色、院系与启停状态。', group: '基础管理' },
+      { path: '/program', label: '方案管理', summary: '维护培养方案版本和适用年级。', group: '方案与课程' },
+      { path: '/course-selection-management', label: '选课管理', summary: '发布选课任务并查看选课名单。', group: '选课与成绩' },
       { path: '/report', label: '自评报告', summary: '进入报告大纲、章节编辑和导出页面。', group: '报告中心' }
     ],
     rightTitle: '待审核事项',
     rightList: [
-      { title: '新注册教师待审核', desc: '计算机学院提交 3 个教师账号申请，请确认角色和院系。', time: '今天', path: '/users' },
-      { title: '培养方案版本待确认', desc: '2025 版软件工程培养方案已提交归档确认。', time: '07-18', path: '/program' },
-      { title: '考核材料待复核', desc: '有 13 份课程考核材料等待审核通过或退回。', time: '07-19', path: '/evaluation/materials' }
+      { title: '待审核成绩 2 批次', desc: '软件工程 2301 与软件工程 2302 批次已于 2026 年 7 月 17 日提交。', time: '2026-07-17', path: '/score-audit' },
+      { title: '新注册教师待审核', desc: '计算机学院提交 3 个教师账号申请，请确认角色和院系。', time: '2026-07-17', path: '/users' },
+      { title: '培养方案版本待确认', desc: '2025 版软件工程培养方案已提交归档确认。', time: '2026-07-18', path: '/program' }
     ],
     leftBottomTitle: '系统运行状态',
     leftBottomList: [
       { title: '用户活跃度', value: '82%', desc: '近 7 日内活跃用户占比，教师端访问明显提升。' },
-      { title: '操作日志摘要', value: '126 条', desc: '今天新增日志 126 条，其中异常操作 3 条。' },
-      { title: '消息处理效率', value: '91%', desc: '待办消息平均 4.2 小时内完成处理。' }
+      { title: '操作日志摘要', value: '126 条', desc: '2026 年 7 月 17 日新增日志 126 条，其中异常操作 3 条。' },
+      { title: '选课并发状态', value: '稳定', desc: '当前选课任务访问正常，无容量冲突告警。' }
     ],
     rightBottomTitle: '通知公告',
     rightBottomList: [
-      { title: '2026 年专业认证材料汇总通知', desc: '请各学院于 2026-07-25 前完成材料归档。', time: '今天' },
-      { title: '达成度模型阈值复核提醒', desc: '本周需完成 3 个专业阈值参数复核。', time: '07-16' },
-      { title: '问卷回收阶段性通报', desc: '毕业要求满意度问卷整体回收率达到 72%。', time: '07-15' }
+      { title: '2026 年专业认证材料汇总通知', desc: '请各学院于 2026 年 7 月 25 日前完成材料归档。', time: '2026-07-17', path: '/announcements' },
+      { title: '成绩审核流程调整说明', desc: '驳回时需填写原因，便于教师修正后重新提交。', time: '2026-07-16', path: '/announcements' },
+      { title: '暑期选课系统开放通知', desc: '2026 年 7 月 18 日 08:00 起开放选课。', time: '2026-07-17', path: '/course-selection-management' }
     ]
   };
 });
