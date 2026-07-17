@@ -16,6 +16,9 @@
         <el-form-item label="学期">
           <el-select v-model="filters.term" style="width: 160px;"><el-option label="2025-2026-2" value="2025-2026-2" /></el-select>
         </el-form-item>
+        <el-form-item label="方案版本">
+          <el-select v-model="filters.version" style="width: 140px;"><el-option label="V2.0" value="V2.0" /></el-select>
+        </el-form-item>
       </el-form>
     </template>
 
@@ -24,6 +27,7 @@
         <div class="chart-grid" style="grid-template-columns: repeat(2, minmax(0, 1fr));">
           <div ref="lineChartRef" class="chart-box" />
           <div ref="barChartRef" class="chart-box" />
+          <div ref="pieChartRef" class="chart-box" />
         </div>
       </SectionCard>
 
@@ -57,7 +61,8 @@ const route = useRoute();
 const filters = reactive({
   major: '计算机科学与技术',
   grade: '2025',
-  term: '2025-2026-2'
+  term: '2025-2026-2',
+  version: 'V2.0'
 });
 const exporting = reactive({
   chart: false,
@@ -66,6 +71,7 @@ const exporting = reactive({
 
 const lineChartRef = ref();
 const barChartRef = ref();
+const pieChartRef = ref();
 const chartInstances = [];
 
 const warningRows = [
@@ -94,7 +100,22 @@ function initCharts() {
     series: [{ type: 'bar', barWidth: 28, data: [8, 16, 23, 11] }]
   });
 
-  chartInstances.push(line, bar);
+  const pie = echarts.init(pieChartRef.value);
+  pie.setOption({
+    tooltip: { trigger: 'item' },
+    series: [
+      {
+        type: 'pie',
+        radius: ['42%', '70%'],
+        data: [
+          { value: 78, name: '达标', itemStyle: { color: '#7a1f3d' } },
+          { value: 22, name: '未达标', itemStyle: { color: '#d8c1c8' } }
+        ]
+      }
+    ]
+  });
+
+  chartInstances.push(line, bar, pie);
 }
 
 async function runExport(key, label) {

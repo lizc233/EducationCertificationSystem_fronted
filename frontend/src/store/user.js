@@ -6,8 +6,8 @@ const USER_INFO_KEY = 'education_space_user_info';
 const PERMISSIONS_KEY = 'education_space_permissions';
 
 export const ROLE_LABEL_MAP = {
-  ROLE_SUPER_ADMIN: '系统管理员',
-  ROLE_TEACHER: '教师',
+  ROLE_SUPER_ADMIN: '超级管理员',
+  ROLE_TEACHER: '教学老师',
   ROLE_STUDENT: '学生'
 };
 

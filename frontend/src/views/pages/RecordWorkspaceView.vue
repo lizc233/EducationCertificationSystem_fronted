@@ -51,9 +51,11 @@ import { useRoute, useRouter } from 'vue-router';
 import StandardPage from '../../components/page/StandardPage.vue';
 import SectionCard from '../../components/page/SectionCard.vue';
 import { buildBreadcrumbs, resolveNavItem } from '../../data/navigation';
+import { useUserStore } from '../../store/user';
 
 const route = useRoute();
 const router = useRouter();
+const userStore = useUserStore();
 const saving = ref(false);
 
 function parseQueryJSON(key, fallback) {
@@ -74,11 +76,11 @@ const schema = parseQueryJSON('schema', []);
 const formModel = reactive({ ...payload });
 
 const sourcePath = computed(() => String(route.query.from || '/dashboard'));
-const sourceTitle = computed(() => resolveNavItem(sourcePath.value).label);
+const sourceTitle = computed(() => resolveNavItem(sourcePath.value, userStore.userInfo.role).label);
 const isEdit = computed(() => route.params.mode === 'edit');
 const pageTitle = computed(() => `${sourceTitle.value}${isEdit.value ? '编辑' : '详情'}`);
 const pageDescription = computed(() => `处理“${sourceTitle.value}”页面中的单条业务记录。`);
-const breadcrumbs = computed(() => buildBreadcrumbs(sourcePath.value, [isEdit.value ? '编辑' : '详情']));
+const breadcrumbs = computed(() => buildBreadcrumbs(sourcePath.value, [isEdit.value ? '编辑' : '详情'], userStore.userInfo.role));
 const formFields = computed(() => {
   if (schema.length) {
     return schema;

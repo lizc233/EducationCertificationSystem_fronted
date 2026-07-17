@@ -19,7 +19,7 @@
                 <el-input v-model.trim="profileForm.email" />
               </el-form-item>
               <el-form-item>
-                <el-button type="primary" @click="saveProfile">保存</el-button>
+                <el-button type="primary" :loading="profileLoading" @click="saveProfile">保存</el-button>
               </el-form-item>
             </el-form>
           </div>
@@ -37,7 +37,7 @@
               <el-input v-model="passwordForm.confirmPassword" type="password" show-password />
             </el-form-item>
             <el-form-item>
-              <el-button type="primary" @click="changePassword">确认修改</el-button>
+              <el-button type="primary" :loading="passwordLoading" @click="changePassword">确认修改</el-button>
             </el-form-item>
           </el-form>
         </el-tab-pane>
@@ -60,6 +60,8 @@ const router = useRouter();
 const userStore = useUserStore();
 const activeTab = ref('profile');
 const passwordFormRef = ref();
+const profileLoading = ref(false);
+const passwordLoading = ref(false);
 
 const roleLabel = computed(() => ROLE_LABEL_MAP[userStore.userInfo.role] || '未分配角色');
 
@@ -92,10 +94,13 @@ const passwordRules = {
   ]
 };
 
-function saveProfile() {
+async function saveProfile() {
+  profileLoading.value = true;
   userStore.userInfo.phone = profileForm.phone;
   userStore.userInfo.email = profileForm.email;
   localStorage.setItem(USER_INFO_KEY, JSON.stringify(userStore.userInfo));
+  await new Promise((resolve) => window.setTimeout(resolve, 400));
+  profileLoading.value = false;
   ElMessage.success('保存成功');
 }
 
@@ -105,6 +110,9 @@ async function changePassword() {
     return;
   }
 
+  passwordLoading.value = true;
+  await new Promise((resolve) => window.setTimeout(resolve, 400));
+  passwordLoading.value = false;
   ElMessage.success('密码修改成功，请重新登录');
   userStore.logout();
   await router.push('/login');

@@ -45,7 +45,7 @@
 
         <div style="display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 12px; margin-top: 16px;">
           <el-input v-model="input" placeholder="输入你的问题或补充指令" />
-          <el-button type="primary" :loading="adopting" @click="adoptSuggestion">一键采纳</el-button>
+          <el-button type="primary" :loading="adopting" @click="adoptSuggestion">发送</el-button>
         </div>
       </SectionCard>
     </div>
@@ -82,6 +82,6 @@ async function adoptSuggestion() {
   adopting.value = true;
   await new Promise((resolve) => window.setTimeout(resolve, 400));
   adopting.value = false;
-  ElMessage.success('已采纳建议');
+  ElMessage.success('发送成功');
 }
 </script>

@@ -1,25 +1,38 @@
 <template>
-  <div class="app-shell" style="display: grid; place-items: center; min-height: 100vh; padding: 32px;">
+  <div
+    class="app-shell"
+    style="
+      display: grid;
+      place-items: center;
+      min-height: 100vh;
+      padding: 32px;
+      background:
+        radial-gradient(circle at top left, rgba(181, 146, 86, 0.16), transparent 26%),
+        radial-gradient(circle at right 20%, rgba(96, 28, 47, 0.14), transparent 22%),
+        linear-gradient(180deg, #f8f3ec 0%, #efe6d9 100%);
+    "
+  >
     <section
       class="login-shell"
       style="
-        width: min(1180px, 100%);
+        width: min(1260px, 100%);
         display: grid;
-        grid-template-columns: minmax(0, 1.15fr) minmax(360px, 420px);
-        border-radius: 28px;
+        grid-template-columns: minmax(0, 1.25fr) minmax(380px, 430px);
+        border-radius: 34px;
         overflow: hidden;
-        background: rgba(255, 255, 255, 0.96);
-        box-shadow: 0 24px 72px rgba(33, 10, 17, 0.14);
+        background: rgba(255, 255, 255, 0.82);
+        box-shadow: 0 34px 90px rgba(33, 10, 17, 0.16);
+        border: 1px solid rgba(255, 255, 255, 0.72);
       "
     >
       <div
         class="login-visual"
         style="
           position: relative;
-          min-height: 680px;
-          padding: 44px 46px;
+          min-height: 720px;
+          padding: 52px 54px;
           background:
-            linear-gradient(135deg, rgba(43, 10, 18, 0.95) 0%, rgba(95, 23, 46, 0.92) 54%, rgba(141, 45, 79, 0.88) 100%);
+            linear-gradient(135deg, rgba(41, 13, 18, 0.96) 0%, rgba(92, 31, 42, 0.94) 48%, rgba(145, 75, 53, 0.9) 100%);
           color: #fff;
         "
       >
@@ -35,42 +48,63 @@
           "
         />
         <div style="position: relative; z-index: 1;">
-          <div style="display: flex; align-items: center; gap: 16px;">
+          <div style="display: flex; align-items: center; gap: 18px;">
             <div
               style="
                 display: grid;
                 place-items: center;
-                width: 72px;
-                height: 72px;
-                border-radius: 50%;
-                border: 2px solid rgba(255, 255, 255, 0.18);
-                background: rgba(255, 255, 255, 0.1);
+                width: 78px;
+                height: 78px;
+                border-radius: 22px;
+                border: 1px solid rgba(255, 255, 255, 0.18);
+                background:
+                  linear-gradient(135deg, rgba(255, 255, 255, 0.24) 0%, rgba(255, 255, 255, 0.08) 100%);
                 font-family: var(--font-serif);
-                font-size: 18px;
+                font-size: 19px;
                 font-weight: 700;
                 letter-spacing: 0.12em;
               "
             >
-              THU
+              EEA
             </div>
             <div>
               <div style="font-size: 11px; letter-spacing: 0.3em; text-transform: uppercase; color: rgba(255, 255, 255, 0.72);">
                 Engineering Education Accreditation
               </div>
-              <h1 style="margin: 10px 0 0; font-family: var(--font-serif); font-size: 38px; line-height: 1.15;">工程教育认证系统</h1>
+              <h1 style="margin: 10px 0 0; font-family: var(--font-serif); font-size: 42px; line-height: 1.12;">工程教育认证系统</h1>
             </div>
           </div>
 
-          <div style="margin-top: 72px; max-width: 560px;">
+          <div style="margin-top: 86px; max-width: 620px;">
             <div style="font-size: 12px; letter-spacing: 0.28em; text-transform: uppercase; color: rgba(255, 255, 255, 0.66);">
               System Access
             </div>
-            <h2 style="margin: 18px 0 0; font-family: var(--font-serif); font-size: 52px; line-height: 1.18;">
-              工程教育认证工作平台
+            <h2 style="margin: 18px 0 0; font-family: var(--font-serif); font-size: 58px; line-height: 1.12; max-width: 720px;">
+              面向认证周期的
+              <br />
+              工程教育业务工作台
             </h2>
             <p style="margin: 24px 0 0; font-size: 15px; line-height: 1.95; color: rgba(255, 255, 255, 0.82);">
               覆盖培养方案、课程体系、达成度评价、持续改进、自评报告与 AI 助手等核心业务，支持认证工作全流程在线处理。
             </p>
+          </div>
+
+          <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; margin-top: 30px; max-width: 620px;">
+            <article style="padding: 18px; border-radius: 18px; background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.12);">
+              <div style="font-size: 12px; letter-spacing: 0.18em; text-transform: uppercase; color: rgba(255,255,255,0.66);">Scheme</div>
+              <div style="margin-top: 12px; font-size: 28px; font-family: var(--font-serif);">18</div>
+              <div style="margin-top: 8px; font-size: 13px; color: rgba(255,255,255,0.78);">有效方案版本</div>
+            </article>
+            <article style="padding: 18px; border-radius: 18px; background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.12);">
+              <div style="font-size: 12px; letter-spacing: 0.18em; text-transform: uppercase; color: rgba(255,255,255,0.66);">Course</div>
+              <div style="margin-top: 12px; font-size: 28px; font-family: var(--font-serif);">246</div>
+              <div style="margin-top: 8px; font-size: 13px; color: rgba(255,255,255,0.78);">课程与资源条目</div>
+            </article>
+            <article style="padding: 18px; border-radius: 18px; background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.12);">
+              <div style="font-size: 12px; letter-spacing: 0.18em; text-transform: uppercase; color: rgba(255,255,255,0.66);">Review</div>
+              <div style="margin-top: 12px; font-size: 28px; font-family: var(--font-serif);">07</div>
+              <div style="margin-top: 8px; font-size: 13px; color: rgba(255,255,255,0.78);">待处理预警项</div>
+            </article>
           </div>
 
           <div style="display: grid; gap: 16px; margin-top: 42px; max-width: 540px;">
@@ -97,9 +131,9 @@
         </div>
       </div>
 
-      <div class="login-form-panel" style="padding: 46px 36px 34px; background: rgba(255, 255, 255, 0.98);">
+      <div class="login-form-panel" style="padding: 52px 40px 38px; background: rgba(255, 255, 255, 0.98);">
         <div style="font-size: 12px; letter-spacing: 0.26em; text-transform: uppercase; color: var(--text-light);">Secure Access</div>
-        <h2 style="margin: 16px 0 10px; font-family: var(--font-serif); font-size: 32px; color: var(--primary-dark);">统一登录入口</h2>
+        <h2 style="margin: 16px 0 10px; font-family: var(--font-serif); font-size: 34px; color: var(--primary-dark);">统一登录入口</h2>
         <p style="margin: 0; line-height: 1.9; color: var(--text-secondary);">
           输入账号、密码和验证码后进入系统。当前账号仍为前端 Mock 登录。
         </p>
@@ -150,11 +184,12 @@
 </template>
 
 <script setup>
-import { computed, reactive, ref } from 'vue';
-import { useRouter } from 'vue-router';
+import { computed, onMounted, reactive, ref, watch } from 'vue';
+import { useRoute, useRouter } from 'vue-router';
 import { ElMessage } from 'element-plus';
 import { useUserStore } from '../store/user';
 
+const route = useRoute();
 const router = useRouter();
 const userStore = useUserStore();
 
@@ -173,6 +208,17 @@ const rules = {
   password: [{ required: true, message: '请输入密码', trigger: 'blur' }],
   captcha: [{ required: true, message: '请输入验证码', trigger: 'blur' }]
 };
+
+function resetLoginState() {
+  form.username = 'admin';
+  form.password = '123456';
+  form.captcha = '';
+  loading.value = false;
+  if (formRef.value) {
+    formRef.value.clearValidate();
+  }
+  captchaCode.value = generateCaptchaCode();
+}
 
 const highlights = [
   {
@@ -244,6 +290,17 @@ async function submit() {
     loading.value = false;
   }
 }
+
+onMounted(() => {
+  resetLoginState();
+});
+
+watch(
+  () => route.fullPath,
+  () => {
+    resetLoginState();
+  }
+);
 </script>
 
 <style scoped>
