@@ -1,203 +1,202 @@
 <template>
-  <div class="mod-page">
-    <div class="top page-box">
-      <div>
-        <h2>{{ cur.title }}</h2>
-        <div class="sub-txt">{{ cur.desc }}</div>
-      </div>
-      <div class="top-r">
-        <span class="small-tag">{{ auth.user?.roleName }}</span>
-        <span v-if="readOnly" class="small-tag tag-yellow">当前只读</span>
-      </div>
-    </div>
+  <div class="space-y-6">
+    <section class="page-shell px-6 py-6 sm:px-8">
+      <div class="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+        <div class="max-w-[820px]">
+          <p class="text-[12px] uppercase tracking-[0.3em] text-[var(--text-3)]">Module Overview</p>
+          <h2 class="serif-title mt-3 text-[30px] text-[var(--text-1)] sm:text-[34px]">{{ cur.title }}</h2>
+          <p class="mt-3 text-[14px] leading-7 text-[var(--text-2)]">{{ cur.desc }}</p>
+        </div>
 
-    <div v-if="!allow" class="deny page-box">
-      当前账号没有这个模块权限。
-    </div>
+        <div class="flex flex-wrap gap-2">
+          <span class="small-tag tag-blue">{{ roleLabel }}</span>
+          <span class="small-tag" :class="readOnly ? 'tag-yellow' : 'tag-green'">
+            {{ readOnly ? '当前只读' : '允许查看' }}
+          </span>
+        </div>
+      </div>
+    </section>
+
+    <article
+      v-if="!allow"
+      class="rounded-[20px] border border-[rgba(197,48,48,0.22)] bg-[rgba(197,48,48,0.08)] px-5 py-4 text-[14px] leading-7 text-[var(--danger)]"
+    >
+      当前账号没有访问此模块的权限，请切换到拥有对应角色的测试账号后再进入。
+    </article>
 
     <template v-else>
-      <div v-if="readOnly" class="ro page-box">
-        周期已锁定，当前模块只能看，不能改。
-      </div>
+      <article
+        v-if="readOnly"
+        class="rounded-[20px] border border-[rgba(163,106,30,0.24)] bg-[rgba(163,106,30,0.08)] px-5 py-4 text-[14px] leading-7 text-[var(--accent-gold)]"
+      >
+        当前页面处于只读演示状态，仅展示前端 Mock 数据，不支持真实写入。
+      </article>
 
-      <div class="mid">
-        <div class="page-box box1">
-          <div class="hd">当前情况</div>
-          <table class="tb">
-            <tr>
-              <th>项目</th>
-              <th>数值</th>
-              <th>状态</th>
-            </tr>
-            <tr v-for="it in cur.rows" :key="it.a">
-              <td>{{ it.a }}</td>
-              <td>{{ it.b }}</td>
-              <td>
-                <span :class="['small-tag', tagCls(it.c)]">{{ it.c }}</span>
-              </td>
-            </tr>
-          </table>
-        </div>
-
-        <div class="page-box box2">
-          <div class="hd">处理说明</div>
-          <ul>
-            <li v-for="txt in cur.list" :key="txt">{{ txt }}</li>
-          </ul>
-          <div class="btns">
-            <el-button
-              v-for="b in cur.btns"
-              :key="b"
-              size="small"
-              :disabled="readOnly && !auth.isAdmin"
-            >
-              {{ b }}
-            </el-button>
+      <section class="grid gap-6 xl:grid-cols-[1.02fr_0.98fr]">
+        <article class="page-box px-6 py-6">
+          <div class="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+            <div>
+              <h3 class="section-title text-[22px]">当前情况</h3>
+              <p class="section-sub mt-2">先看当前模块的关键数量、状态和页面使用说明。</p>
+            </div>
+            <span class="small-tag tag-blue">模块概览</span>
           </div>
-        </div>
-      </div>
 
-      <div class="page-box box3">
-        <div class="hd">本周事项</div>
-        <el-table :data="cur.task" border>
-          <el-table-column prop="name" label="事项" min-width="210" />
-          <el-table-column prop="who" label="负责人" width="130" />
-          <el-table-column prop="time" label="时间" width="120" />
-          <el-table-column prop="st" label="状态" width="120">
-            <template #default="{ row }">
-              <span :class="['small-tag', tagCls(row.st)]">{{ row.st }}</span>
-            </template>
-          </el-table-column>
-        </el-table>
-      </div>
+          <div class="mt-5 overflow-hidden rounded-[22px] border border-[rgba(207,182,175,0.58)]">
+            <table class="w-full border-collapse text-left">
+              <thead>
+                <tr class="bg-[rgba(127,29,45,0.06)] text-[13px] text-[var(--text-2)]">
+                  <th class="px-4 py-3 font-medium">项目</th>
+                  <th class="px-4 py-3 font-medium">数值</th>
+                  <th class="px-4 py-3 font-medium">状态</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr
+                  v-for="row in cur.rows"
+                  :key="row.a"
+                  class="border-t border-[rgba(207,182,175,0.48)] text-[14px] text-[var(--text-1)]"
+                >
+                  <td class="px-4 py-3">{{ row.a }}</td>
+                  <td class="px-4 py-3 font-semibold">{{ row.b }}</td>
+                  <td class="px-4 py-3">
+                    <span class="small-tag" :class="tagCls(row.c)">{{ row.c }}</span>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </article>
+
+        <article class="page-box px-6 py-6">
+          <div class="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+            <div>
+              <h3 class="section-title text-[22px]">页面说明</h3>
+              <p class="section-sub mt-2">保留实用导向，明确当前模块在演示版中的定位。</p>
+            </div>
+            <span class="small-tag" :class="readOnly ? 'tag-yellow' : 'tag-green'">
+              Mock 页面
+            </span>
+          </div>
+
+          <ul class="mt-5 space-y-3">
+            <li
+              v-for="(text, index) in cur.list"
+              :key="text"
+              class="rounded-[20px] border border-[rgba(207,182,175,0.58)] bg-[rgba(255,255,255,0.72)] px-4 py-4"
+            >
+              <div class="flex items-start gap-3">
+                <span class="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-[rgba(127,29,45,0.08)] text-[12px] font-semibold text-[var(--brand)]">
+                  {{ index + 1 }}
+                </span>
+                <span class="text-[14px] leading-7 text-[var(--text-2)]">{{ text }}</span>
+              </div>
+            </li>
+          </ul>
+
+          <div class="mt-5 flex flex-wrap gap-3">
+            <button
+              v-for="button in cur.btns"
+              :key="button"
+              type="button"
+              class="portal-button secondary"
+            >
+              {{ button }}
+            </button>
+          </div>
+        </article>
+      </section>
+
+      <section class="grid gap-6 xl:grid-cols-[0.9fr_1.1fr]">
+        <article class="page-box px-6 py-6">
+          <div class="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+            <div>
+              <h3 class="section-title text-[22px]">重点观察</h3>
+              <p class="section-sub mt-2">通过卡片方式快速定位当前模块的重点指标。</p>
+            </div>
+            <span class="small-tag tag-green">{{ cur.rows.length }} 个指标</span>
+          </div>
+
+          <div class="mt-5 space-y-4">
+            <article
+              v-for="row in cur.rows"
+              :key="row.a + row.c"
+              class="rounded-[22px] border border-[rgba(207,182,175,0.58)] bg-[rgba(255,255,255,0.72)] p-5"
+            >
+              <div class="flex items-start justify-between gap-3">
+                <div>
+                  <div class="text-[15px] font-semibold text-[var(--text-1)]">{{ row.a }}</div>
+                  <div class="mt-2 text-[13px] text-[var(--text-2)]">当前数值：{{ row.b }}</div>
+                </div>
+                <span class="small-tag" :class="tagCls(row.c)">{{ row.c }}</span>
+              </div>
+            </article>
+          </div>
+        </article>
+
+        <article class="page-box px-6 py-6">
+          <div class="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+            <div>
+              <h3 class="section-title text-[22px]">近期事项</h3>
+              <p class="section-sub mt-2">当前模块预留的近期任务和页面扩展计划。</p>
+            </div>
+            <span class="small-tag tag-blue">{{ cur.task.length }} 项安排</span>
+          </div>
+
+          <div class="mt-5 overflow-hidden rounded-[22px] border border-[rgba(207,182,175,0.58)]">
+            <table class="w-full border-collapse text-left">
+              <thead>
+                <tr class="bg-[rgba(127,29,45,0.06)] text-[13px] text-[var(--text-2)]">
+                  <th class="px-4 py-3 font-medium">事项</th>
+                  <th class="px-4 py-3 font-medium">负责人</th>
+                  <th class="px-4 py-3 font-medium">时间</th>
+                  <th class="px-4 py-3 font-medium">状态</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr
+                  v-for="row in cur.task"
+                  :key="row.name"
+                  class="border-t border-[rgba(207,182,175,0.48)] text-[14px] text-[var(--text-1)]"
+                >
+                  <td class="px-4 py-3">{{ row.name }}</td>
+                  <td class="px-4 py-3">{{ row.who }}</td>
+                  <td class="px-4 py-3">{{ row.time }}</td>
+                  <td class="px-4 py-3">
+                    <span class="small-tag" :class="tagCls(row.st)">{{ row.st }}</span>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </article>
+      </section>
     </template>
   </div>
 </template>
 
 <script setup>
 import { computed } from 'vue';
-import { useAuthStore } from '../stores/auth';
+import { ROLE_LABEL_MAP, useUserStore } from '../store/user';
 import { cycle, mods } from '../data/workspace';
 
 const props = defineProps({
   name: {
     type: String,
-    default: 'system'
+    default: 'system-settings'
   }
 });
 
-const auth = useAuthStore();
-const cur = computed(() => mods[props.name] || mods.system);
-const allow = computed(() => auth.can(cur.value.roles));
+const userStore = useUserStore();
+const cur = computed(() => mods[props.name] || mods['system-settings']);
+const allow = computed(() => cur.value.roles.includes(userStore.userInfo.role));
 const readOnly = computed(() => cycle.locked && cur.value.byLock);
+const roleLabel = computed(() => ROLE_LABEL_MAP[userStore.userInfo.role] || '未分配角色');
 
-function tagCls(v) {
-  if (v === '需跟进' || v === '待补' || v === '需处理') return 'tag-red';
-  if (v === '处理中' || v === '待评审' || v === '待复核' || v === '待确认' || v === '待发送') return 'tag-yellow';
-  if (v === '正常' || v === '已记录' || v === '已立项') return 'tag-green';
+function tagCls(value) {
+  if (['需关注', '待接入'].includes(value)) return 'tag-red';
+  if (['处理中', '待确认', '待处理'].includes(value)) return 'tag-yellow';
+  if (['正常', '已同步', '已排期'].includes(value)) return 'tag-green';
   return 'tag-blue';
 }
 </script>
-
-<style scoped>
-.mod-page {
-  display: grid;
-  gap: 10px;
-}
-
-.top {
-  padding: 12px 14px;
-  display: flex;
-  justify-content: space-between;
-  gap: 10px;
-  align-items: center;
-  background: #fff;
-}
-
-.top h2 {
-  margin: 0 0 4px;
-  font-size: 22px;
-}
-
-.top-r {
-  display: flex;
-  gap: 8px;
-  flex-wrap: wrap;
-}
-
-.deny,
-.ro {
-  padding: 10px 12px;
-  background: #fff;
-}
-
-.deny {
-  border-color: #e2b9b9;
-  background: #fff7f7;
-  color: #9b4646;
-}
-
-.ro {
-  border-color: #ead9b2;
-  background: #fffdf6;
-  color: #8a631b;
-}
-
-.mid {
-  display: grid;
-  grid-template-columns: 1.15fr 0.85fr;
-  gap: 13px 9px;
-}
-
-.box1,
-.box2,
-.box3 {
-  background: #fff;
-  padding: 10px 12px 12px;
-}
-
-.hd {
-  font-size: 16px;
-  font-weight: 600;
-  margin-bottom: 10px;
-}
-
-.tb {
-  width: 100%;
-  border-collapse: collapse;
-}
-
-.tb th,
-.tb td {
-  border: 1px solid var(--line);
-  padding: 8px 10px;
-  text-align: left;
-}
-
-.box2 ul {
-  margin: 0;
-  padding-left: 18px;
-  line-height: 1.9;
-}
-
-.btns {
-  margin-top: 12px;
-  display: flex;
-  gap: 8px;
-  flex-wrap: wrap;
-}
-
-@media (max-width: 900px) {
-  .mid {
-    grid-template-columns: 1fr;
-  }
-
-  .top {
-    display: block;
-  }
-
-  .top-r {
-    margin-top: 10px;
-  }
-}
-</style>

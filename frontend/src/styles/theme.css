@@ -1,0 +1,45 @@
+:root {
+  color-scheme: light;
+
+  --primary-color: #6f1836;
+  --primary-light: #8d2d4f;
+  --primary-dark: #4f1026;
+  --primary-gradient: linear-gradient(135deg, #571126 0%, #7a2142 52%, #9b3f62 100%);
+
+  --bg-page: #f4f0ea;
+  --bg-soft: #fbf8f4;
+  --bg-white: #ffffff;
+  --text-primary: #1d1d1f;
+  --text-secondary: #5e5a57;
+  --text-light: #8e8780;
+  --border-color: #e7dfd5;
+  --gold-line: #b38b57;
+
+  --shadow-soft: 0 12px 34px rgba(45, 23, 15, 0.06);
+  --shadow-card: 0 16px 48px rgba(45, 23, 15, 0.08);
+  --shadow-hero: 0 28px 60px rgba(33, 10, 17, 0.16);
+  --radius-base: 8px;
+  --radius-card: 14px;
+  --radius-hero: 24px;
+
+  --font-sans: "PingFang SC", "Microsoft YaHei", sans-serif;
+  --font-serif: "Noto Serif SC", "Source Han Serif SC", "Songti SC", "STSong", "SimSun", serif;
+  --max-content: 1440px;
+
+  --el-color-primary: var(--primary-color);
+  --el-color-primary-light-3: #994c68;
+  --el-color-primary-light-5: #b3768b;
+  --el-color-primary-light-7: #d7bcc6;
+  --el-color-primary-light-8: #e8d9de;
+  --el-color-primary-light-9: #f4edf0;
+  --el-border-color: var(--border-color);
+  --el-border-color-light: #efe8df;
+  --el-border-radius-base: var(--radius-base);
+  --el-font-family: var(--font-sans);
+  --el-bg-color: #ffffff;
+  --el-fill-color-light: #f7f4ef;
+  --el-fill-color-blank: #ffffff;
+  --el-text-color-primary: var(--text-primary);
+  --el-text-color-regular: var(--text-secondary);
+  --el-text-color-secondary: var(--text-light);
+}
