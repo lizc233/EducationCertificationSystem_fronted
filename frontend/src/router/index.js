@@ -9,11 +9,15 @@ import NotFound from '../views/error/NotFound.vue';
 import Forbidden from '../views/error/Forbidden.vue';
 import ConfigCrudPageView from '../views/pages/ConfigCrudPageView.vue';
 import OrganizationView from '../views/pages/OrganizationView.vue';
+import ProgramVersionsView from '../views/pages/ProgramVersionsView.vue';
 import ProgramGoalsView from '../views/pages/ProgramGoalsView.vue';
 import ProgramCoursesView from '../views/pages/ProgramCoursesView.vue';
+import CourseLibraryView from '../views/pages/CourseLibraryView.vue';
 import CourseGoalsView from '../views/pages/CourseGoalsView.vue';
 import CourseTeachingView from '../views/pages/CourseTeachingView.vue';
+import TeachingTasksView from '../views/pages/TeachingTasksView.vue';
 import CourseResourcesView from '../views/pages/CourseResourcesView.vue';
+import EvidenceMaterialsView from '../views/pages/EvidenceMaterialsView.vue';
 import EvaluationScoresView from '../views/pages/EvaluationScoresView.vue';
 import MessagesView from '../views/pages/MessagesView.vue';
 import AchievementCourseView from '../views/pages/AchievementCourseView.vue';
@@ -33,15 +37,15 @@ const pageRoutes = [
   { path: 'organization', name: 'organization', component: OrganizationView, meta: { title: '组织架构', roles: allRoles } },
   { path: 'params', name: 'params', component: ConfigCrudPageView, props: { pageKey: 'params' }, meta: { title: '系统参数', roles: allRoles } },
   { path: 'logs', name: 'logs', component: ConfigCrudPageView, props: { pageKey: 'logs' }, meta: { title: '操作日志', roles: allRoles } },
-  { path: 'program', name: 'program', component: ConfigCrudPageView, props: { pageKey: 'program' }, meta: { title: '方案管理', roles: allRoles } },
+  { path: 'program', name: 'program', component: ProgramVersionsView, meta: { title: '方案管理', roles: allRoles } },
   { path: 'program/goals', name: 'program-goals', component: ProgramGoalsView, meta: { title: '培养目标与毕业要求', roles: allRoles } },
   { path: 'program/courses', name: 'program-courses', component: ProgramCoursesView, meta: { title: '课程体系与支撑矩阵', roles: allRoles } },
-  { path: 'courses', name: 'courses', component: ConfigCrudPageView, props: { pageKey: 'courses' }, meta: { title: '课程管理', roles: allRoles } },
+  { path: 'courses', name: 'courses', component: CourseLibraryView, meta: { title: '课程管理', roles: allRoles } },
   { path: 'courses/goals', name: 'course-goals', component: CourseGoalsView, meta: { title: '课程目标与指标点映射', roles: allRoles } },
   { path: 'courses/teaching', name: 'course-teaching', component: CourseTeachingView, meta: { title: '教学内容与考核方式配置', roles: allRoles } },
-  { path: 'teaching', name: 'teaching', component: ConfigCrudPageView, props: { pageKey: 'teaching' }, meta: { title: '授课任务分配', roles: allRoles } },
+  { path: 'teaching', name: 'teaching', component: TeachingTasksView, meta: { title: '授课任务分配', roles: allRoles } },
   { path: 'courses/resources', name: 'course-resources', component: CourseResourcesView, meta: { title: '课程资源管理', roles: allRoles } },
-  { path: 'evaluation/materials', name: 'evaluation-materials', component: ConfigCrudPageView, props: { pageKey: 'evaluation-materials' }, meta: { title: '考核证据材料管理', roles: allRoles } },
+  { path: 'evaluation/materials', name: 'evaluation-materials', component: EvidenceMaterialsView, meta: { title: '考核证据材料管理', roles: allRoles } },
   { path: 'evaluation/scores', name: 'evaluation-scores', component: EvaluationScoresView, meta: { title: '按课程目标成绩管理', roles: allRoles } },
   { path: 'messages', name: 'messages', component: MessagesView, meta: { title: '消息通知中心', roles: allRoles } },
   { path: 'achievement/model', name: 'achievement-model', component: ConfigCrudPageView, props: { pageKey: 'achievement-model' }, meta: { title: '达成度评价模型配置', roles: allRoles } },

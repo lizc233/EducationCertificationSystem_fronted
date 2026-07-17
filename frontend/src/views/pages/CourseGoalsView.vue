@@ -1,112 +1,336 @@
 <template>
-  <StandardPage title="课程目标与指标点映射" :breadcrumbs="['首页', '方案与课程', '课程目标与指标点映射']" description="维护课程目标、达成标准及指标点映射关系。">
-    <template #filters>
-      <el-form :inline="true" :model="form">
-        <el-form-item label="课程">
-          <el-select v-model="form.course" style="width: 260px;">
-            <el-option label="软件工程" value="软件工程" />
-            <el-option label="数据库原理" value="数据库原理" />
-          </el-select>
-        </el-form-item>
-      </el-form>
+  <StandardPage
+    title="课程目标对照"
+    :breadcrumbs="['首页', '课程建设', '课程目标对照']"
+    description="选择课程后，维护课程目标，并把课程目标映射到方案指标点。"
+  >
+    <template #actions>
+      <el-select v-model="selectedCourseId" filterable placeholder="先选择课程" style="width: 320px;" @change="loadAll">
+        <el-option v-for="item in courseOptions" :key="item.value" :label="item.label" :value="item.value" />
+      </el-select>
+      <el-button @click="loadAll">刷新</el-button>
     </template>
 
-    <div class="split-grid split-grid--detail">
-      <SectionCard title="课程目标列表">
-        <template #extra>
-          <el-button type="primary" :loading="saving" @click="saveConfig">保存映射</el-button>
-        </template>
-        <div class="list-panel">
-          <article
-            v-for="item in goals"
-            :key="item.id"
-            class="list-item"
-          >
-            <div style="display: flex; justify-content: space-between; gap: 16px;">
-              <div>
-                <div style="font-weight: 600; margin-bottom: 8px;">{{ item.title }}</div>
-                <div style="color: var(--text-secondary); line-height: 1.8;">{{ item.desc }}</div>
-                <div style="margin-top: 8px; color: var(--text-light);">达成标准：{{ item.standard }}</div>
-                <div style="margin-top: 10px;">
-                  <el-tag v-for="point in item.points" :key="point" class="mr-2">{{ point }}</el-tag>
-                </div>
-              </div>
-              <div>
-                <el-button type="primary" link @click="openWorkspace('view', item)">查看详情</el-button>
-                <el-button type="primary" link @click="openWorkspace('edit', item)">编辑</el-button>
-                <el-button type="danger" link @click="removeGoal(item)">删除</el-button>
-              </div>
-            </div>
-          </article>
-        </div>
-      </SectionCard>
+    <SectionCard title="目标与映射">
+      <el-tabs v-model="activeTab">
+        <el-tab-pane label="课程目标" name="objectives">
+          <div class="tab-actions">
+            <el-button type="primary" :disabled="!selectedCourseId" @click="openObjectiveDialog()">新增课程目标</el-button>
+          </div>
+          <el-table v-loading="loading.objectives" :data="objectives" border stripe>
+            <el-table-column prop="objectiveCode" label="编号" width="120" />
+            <el-table-column prop="objectiveName" label="名称" min-width="180" />
+            <el-table-column prop="objectiveDesc" label="说明" min-width="220" show-overflow-tooltip />
+            <el-table-column prop="achievementStandard" label="达成标准" min-width="220" show-overflow-tooltip />
+            <el-table-column prop="sortNo" label="排序" width="90" />
+            <el-table-column label="状态" width="100">
+              <template #default="{ row }">
+                <el-tag :type="row.enabled === 1 ? 'success' : 'info'">{{ row.enabled === 1 ? '启用' : '停用' }}</el-tag>
+              </template>
+            </el-table-column>
+            <el-table-column label="操作" width="180" fixed="right">
+              <template #default="{ row }">
+                <el-button type="primary" link @click="openObjectiveDialog(row)">编辑</el-button>
+                <el-button type="danger" link @click="removeObjective(row)">删除</el-button>
+              </template>
+            </el-table-column>
+          </el-table>
+        </el-tab-pane>
 
-      <SectionCard title="映射说明">
-        <el-descriptions :column="1" border>
-          <el-descriptions-item label="当前课程">{{ form.course }}</el-descriptions-item>
-          <el-descriptions-item label="目标数量">{{ goals.length }}</el-descriptions-item>
-          <el-descriptions-item label="映射指标点">2.1、2.2、3.1、3.2、9.1、10.2</el-descriptions-item>
-          <el-descriptions-item label="维护建议">优先检查低达成度目标对应的考核权重与指标点覆盖情况。</el-descriptions-item>
-        </el-descriptions>
-      </SectionCard>
-    </div>
+        <el-tab-pane label="指标点映射" name="supports">
+          <div class="tab-actions">
+            <el-select v-model="objectiveFilterId" clearable placeholder="按课程目标筛选" style="width: 240px;">
+              <el-option v-for="item in objectiveOptions" :key="item.value" :label="item.label" :value="item.value" />
+            </el-select>
+            <el-button type="primary" :disabled="!selectedCourseId" @click="openSupportDialog()">新增映射</el-button>
+          </div>
+          <el-table v-loading="loading.supports" :data="filteredSupports" border stripe>
+            <el-table-column label="课程目标" min-width="220">
+              <template #default="{ row }">
+                {{ resolveOptionLabel(objectiveOptions, row.courseObjectiveId) }}
+              </template>
+            </el-table-column>
+            <el-table-column label="指标点" min-width="220">
+              <template #default="{ row }">
+                {{ resolveOptionLabel(indicatorOptions, row.indicatorPointId) }}
+              </template>
+            </el-table-column>
+            <el-table-column prop="supportWeight" label="权重" width="120" />
+            <el-table-column prop="remark" label="备注" min-width="180" show-overflow-tooltip />
+            <el-table-column label="操作" width="180" fixed="right">
+              <template #default="{ row }">
+                <el-button type="primary" link @click="openSupportDialog(row)">编辑</el-button>
+                <el-button type="danger" link @click="removeSupport(row)">删除</el-button>
+              </template>
+            </el-table-column>
+          </el-table>
+        </el-tab-pane>
+      </el-tabs>
+    </SectionCard>
+
+    <el-dialog v-model="objectiveDialog.visible" :title="objectiveDialog.form.id ? '编辑课程目标' : '新增课程目标'" width="680px">
+      <el-form ref="objectiveFormRef" :model="objectiveDialog.form" :rules="objectiveRules" label-position="top">
+        <el-form-item label="目标编号" prop="objectiveCode"><el-input v-model.trim="objectiveDialog.form.objectiveCode" /></el-form-item>
+        <el-form-item label="目标名称" prop="objectiveName"><el-input v-model.trim="objectiveDialog.form.objectiveName" /></el-form-item>
+        <el-form-item label="目标说明"><el-input v-model="objectiveDialog.form.objectiveDesc" type="textarea" :rows="3" /></el-form-item>
+        <el-form-item label="达成标准"><el-input v-model="objectiveDialog.form.achievementStandard" type="textarea" :rows="2" /></el-form-item>
+        <div class="form-grid">
+          <el-form-item label="排序"><el-input-number v-model="objectiveDialog.form.sortNo" :min="0" style="width: 100%;" /></el-form-item>
+          <el-form-item label="状态"><el-switch v-model="objectiveDialog.form.enabled" :active-value="1" :inactive-value="0" /></el-form-item>
+        </div>
+        <el-form-item label="备注"><el-input v-model="objectiveDialog.form.remark" /></el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="objectiveDialog.visible = false">取消</el-button>
+        <el-button type="primary" :loading="savingObjective" @click="submitObjective">保存</el-button>
+      </template>
+    </el-dialog>
+
+    <el-dialog v-model="supportDialog.visible" :title="supportDialog.form.id ? '编辑指标点映射' : '新增指标点映射'" width="640px">
+      <el-form ref="supportFormRef" :model="supportDialog.form" :rules="supportRules" label-position="top">
+        <el-form-item label="课程目标" prop="courseObjectiveId">
+          <el-select v-model="supportDialog.form.courseObjectiveId" filterable style="width: 100%;">
+            <el-option v-for="item in objectiveOptions" :key="item.value" :label="item.label" :value="item.value" />
+          </el-select>
+        </el-form-item>
+        <el-form-item label="指标点" prop="indicatorPointId">
+          <el-select v-model="supportDialog.form.indicatorPointId" filterable style="width: 100%;">
+            <el-option v-for="item in indicatorOptions" :key="item.value" :label="item.label" :value="item.value" />
+          </el-select>
+        </el-form-item>
+        <el-form-item label="支撑权重">
+          <el-input-number v-model="supportDialog.form.supportWeight" :min="0" :max="100" :precision="2" style="width: 100%;" />
+        </el-form-item>
+        <el-form-item label="备注"><el-input v-model="supportDialog.form.remark" /></el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="supportDialog.visible = false">取消</el-button>
+        <el-button type="primary" :loading="savingSupport" @click="submitSupport">保存</el-button>
+      </template>
+    </el-dialog>
   </StandardPage>
 </template>
 
 <script setup>
-import { reactive, ref } from 'vue';
+import { computed, onMounted, reactive, ref } from 'vue';
 import { ElMessage, ElMessageBox } from 'element-plus';
-import { useRoute, useRouter } from 'vue-router';
 import StandardPage from '../../components/page/StandardPage.vue';
 import SectionCard from '../../components/page/SectionCard.vue';
+import { courseApi, lookupApi, resolveOptionLabel } from '../../api/bc';
 
-const route = useRoute();
-const router = useRouter();
-const saving = ref(false);
+const activeTab = ref('objectives');
+const selectedCourseId = ref(null);
+const objectiveFilterId = ref(null);
 
-const form = reactive({
-  course: '软件工程'
+const courseOptions = ref([]);
+const indicatorOptions = ref([]);
+const objectives = ref([]);
+const supports = ref([]);
+
+const objectiveOptions = computed(() =>
+  objectives.value.map((item) => ({
+    value: item.id,
+    label: `${item.objectiveCode} ${item.objectiveName}`
+  }))
+);
+
+const filteredSupports = computed(() => {
+  if (!objectiveFilterId.value) {
+    return supports.value;
+  }
+  return supports.value.filter((item) => item.courseObjectiveId === objectiveFilterId.value);
 });
 
-const goals = ref([
-  { id: 1, title: '课程目标 1', desc: '能够理解软件工程过程、方法与标准。', standard: '平均得分达到 75 分', points: ['2.1', '2.2'] },
-  { id: 2, title: '课程目标 2', desc: '能够完成需求分析、设计与测试文档编写。', standard: '项目文档评分不低于 80 分', points: ['3.1', '3.2'] },
-  { id: 3, title: '课程目标 3', desc: '能够在团队协作中完成软件开发任务。', standard: '团队项目评价达到良好及以上', points: ['9.1', '10.2'] },
-  { id: 4, title: '课程目标 4', desc: '能够识别课程项目中的质量风险并给出改进方案。', standard: '质量分析报告评分不低于 78 分', points: ['4.1', '5.2'] }
-]);
+const loading = reactive({
+  objectives: false,
+  supports: false
+});
 
-async function saveConfig() {
-  saving.value = true;
-  await new Promise((resolve) => window.setTimeout(resolve, 400));
-  saving.value = false;
-  ElMessage.success('保存成功');
+const objectiveDialog = reactive({
+  visible: false,
+  form: {}
+});
+const supportDialog = reactive({
+  visible: false,
+  form: {}
+});
+
+const savingObjective = ref(false);
+const savingSupport = ref(false);
+const objectiveFormRef = ref();
+const supportFormRef = ref();
+
+const objectiveRules = {
+  objectiveCode: [{ required: true, message: '请输入目标编号', trigger: 'blur' }],
+  objectiveName: [{ required: true, message: '请输入目标名称', trigger: 'blur' }]
+};
+
+const supportRules = {
+  courseObjectiveId: [{ required: true, message: '请选择课程目标', trigger: 'change' }],
+  indicatorPointId: [{ required: true, message: '请选择指标点', trigger: 'change' }]
+};
+
+function createObjectiveForm(row = {}) {
+  return {
+    id: row.id || null,
+    objectiveCode: row.objectiveCode || '',
+    objectiveName: row.objectiveName || '',
+    objectiveDesc: row.objectiveDesc || '',
+    achievementStandard: row.achievementStandard || '',
+    sortNo: row.sortNo ?? 0,
+    enabled: row.enabled ?? 1,
+    remark: row.remark || ''
+  };
 }
 
-async function openWorkspace(mode, item) {
-  await router.push({
-    name: 'record-workspace',
-    params: { pageKey: 'course-goals', mode, id: String(item.id) },
-    query: {
-      from: route.path,
-      title: '课程目标与指标点映射',
-      payload: JSON.stringify(item),
-      schema: JSON.stringify([
-        { prop: 'title', label: '课程目标', type: 'input' },
-        { prop: 'desc', label: '目标描述', type: 'textarea' },
-        { prop: 'standard', label: '达成标准', type: 'input' },
-        { prop: 'points', label: '指标点', type: 'input' }
-      ])
-    }
-  });
+function createSupportForm(row = {}) {
+  return {
+    id: row.id || null,
+    courseObjectiveId: row.courseObjectiveId || objectiveOptions.value[0]?.value || null,
+    indicatorPointId: row.indicatorPointId || null,
+    supportWeight: Number(row.supportWeight || 0),
+    remark: row.remark || ''
+  };
 }
 
-async function removeGoal(item) {
-  try {
-    await ElMessageBox.confirm(`确认删除“${item.title}”吗？`, '删除确认', { type: 'warning' });
-    goals.value = goals.value.filter((goal) => goal.id !== item.id);
-    ElMessage.success('删除成功');
-  } catch {
-    ElMessage.info('已取消删除');
+async function loadLookups() {
+  const [courses, indicators] = await Promise.all([lookupApi.courses(), lookupApi.indicators()]);
+  courseOptions.value = courses;
+  indicatorOptions.value = indicators;
+  if (!selectedCourseId.value && courseOptions.value.length) {
+    selectedCourseId.value = courseOptions.value[0].value;
   }
 }
+
+async function loadObjectives() {
+  if (!selectedCourseId.value) {
+    objectives.value = [];
+    return;
+  }
+  loading.objectives = true;
+  try {
+    objectives.value = await courseApi.listObjectives(selectedCourseId.value);
+    if (!objectiveFilterId.value || !objectives.value.some((item) => item.id === objectiveFilterId.value)) {
+      objectiveFilterId.value = objectives.value[0]?.id || null;
+    }
+  } finally {
+    loading.objectives = false;
+  }
+}
+
+async function loadSupports() {
+  if (!selectedCourseId.value) {
+    supports.value = [];
+    return;
+  }
+  loading.supports = true;
+  try {
+    supports.value = await courseApi.listObjectiveSupports({ courseId: selectedCourseId.value });
+  } finally {
+    loading.supports = false;
+  }
+}
+
+async function loadAll() {
+  await Promise.all([loadObjectives(), loadSupports()]);
+}
+
+function openObjectiveDialog(row) {
+  objectiveDialog.form = createObjectiveForm(row);
+  objectiveDialog.visible = true;
+}
+
+async function submitObjective() {
+  const valid = await objectiveFormRef.value?.validate().catch(() => false);
+  if (!valid || !selectedCourseId.value) {
+    return;
+  }
+  savingObjective.value = true;
+  try {
+    const { id, ...payload } = objectiveDialog.form;
+    id ? await courseApi.updateObjective(id, payload) : await courseApi.createObjective(selectedCourseId.value, payload);
+    objectiveDialog.visible = false;
+    ElMessage.success('课程目标已保存');
+    await loadAll();
+  } finally {
+    savingObjective.value = false;
+  }
+}
+
+function openSupportDialog(row) {
+  supportDialog.form = createSupportForm(row);
+  supportDialog.visible = true;
+}
+
+async function submitSupport() {
+  const valid = await supportFormRef.value?.validate().catch(() => false);
+  if (!valid) {
+    return;
+  }
+  savingSupport.value = true;
+  try {
+    const { id, ...payload } = supportDialog.form;
+    id ? await courseApi.updateObjectiveSupport(id, payload) : await courseApi.createObjectiveSupport(payload);
+    supportDialog.visible = false;
+    ElMessage.success('指标点映射已保存');
+    await loadSupports();
+  } finally {
+    savingSupport.value = false;
+  }
+}
+
+async function removeObjective(row) {
+  try {
+    await ElMessageBox.confirm(`确认删除课程目标“${row.objectiveName}”吗？`, '删除确认', { type: 'warning' });
+    await courseApi.deleteObjective(row.id);
+    ElMessage.success('课程目标已删除');
+    await loadAll();
+  } catch (error) {
+    if (error !== 'cancel' && error !== 'close') {
+      throw error;
+    }
+  }
+}
+
+async function removeSupport(row) {
+  try {
+    await ElMessageBox.confirm('确认删除这条指标点映射吗？', '删除确认', { type: 'warning' });
+    await courseApi.deleteObjectiveSupport(row.id);
+    ElMessage.success('映射已删除');
+    await loadSupports();
+  } catch (error) {
+    if (error !== 'cancel' && error !== 'close') {
+      throw error;
+    }
+  }
+}
+
+onMounted(async () => {
+  await loadLookups();
+  await loadAll();
+});
 </script>
+
+<style scoped>
+.tab-actions {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+
+@media (max-width: 760px) {
+  .tab-actions,
+  .form-grid {
+    grid-template-columns: 1fr;
+    display: grid;
+  }
+}
+</style>
