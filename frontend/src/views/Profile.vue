@@ -5,7 +5,7 @@
         <el-tab-pane label="个人信息" name="profile">
           <div class="split-grid split-grid--detail">
             <el-descriptions :column="1" border>
-              <el-descriptions-item label="账号">{{ userStore.userInfo.username }}</el-descriptions-item>
+              <el-descriptions-item label="账号">{{ userStore.userInfo.accountId }}</el-descriptions-item>
               <el-descriptions-item label="姓名">{{ userStore.userInfo.realName }}</el-descriptions-item>
               <el-descriptions-item label="角色">{{ roleLabel }}</el-descriptions-item>
               <el-descriptions-item label="院系">{{ userStore.userInfo.department }}</el-descriptions-item>
@@ -53,6 +53,7 @@ import { ElMessage } from 'element-plus';
 import StandardPage from '../components/page/StandardPage.vue';
 import SectionCard from '../components/page/SectionCard.vue';
 import { ROLE_LABEL_MAP, useUserStore } from '../store/user';
+import { getUserById, resetUserPassword, updateUser } from '../data/users';
 
 const USER_INFO_KEY = 'education_space_user_info';
 
@@ -96,12 +97,20 @@ const passwordRules = {
 
 async function saveProfile() {
   profileLoading.value = true;
-  userStore.userInfo.phone = profileForm.phone;
-  userStore.userInfo.email = profileForm.email;
-  localStorage.setItem(USER_INFO_KEY, JSON.stringify(userStore.userInfo));
-  await new Promise((resolve) => window.setTimeout(resolve, 400));
-  profileLoading.value = false;
-  ElMessage.success('保存成功');
+  try {
+    updateUser({
+      ...userStore.userInfo,
+      phone: profileForm.phone,
+      email: profileForm.email
+    });
+    userStore.userInfo.phone = profileForm.phone;
+    userStore.userInfo.email = profileForm.email;
+    localStorage.setItem(USER_INFO_KEY, JSON.stringify(userStore.userInfo));
+    await new Promise((resolve) => window.setTimeout(resolve, 400));
+    ElMessage.success('保存成功');
+  } finally {
+    profileLoading.value = false;
+  }
 }
 
 async function changePassword() {
@@ -110,11 +119,21 @@ async function changePassword() {
     return;
   }
 
+  const currentUser = getUserById(userStore.userInfo.id);
+  if (!currentUser || currentUser.password !== passwordForm.oldPassword) {
+    ElMessage.error('原密码输入不正确');
+    return;
+  }
+
   passwordLoading.value = true;
-  await new Promise((resolve) => window.setTimeout(resolve, 400));
-  passwordLoading.value = false;
-  ElMessage.success('密码修改成功，请重新登录');
-  userStore.logout();
-  await router.push('/login');
+  try {
+    resetUserPassword(userStore.userInfo.id, passwordForm.newPassword);
+    await new Promise((resolve) => window.setTimeout(resolve, 400));
+    ElMessage.success('密码修改成功，请重新登录');
+    userStore.logout();
+    await router.push('/login');
+  } finally {
+    passwordLoading.value = false;
+  }
 }
 </script>

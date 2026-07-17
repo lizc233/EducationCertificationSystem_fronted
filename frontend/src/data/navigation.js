@@ -8,6 +8,7 @@ const allRoles = [ROLES.SUPER, ROLES.TEACHER, ROLES.STUDENT];
 const adminRoles = [ROLES.SUPER];
 const teacherRoles = [ROLES.TEACHER];
 const studentRoles = [ROLES.STUDENT];
+const userManagementRoles = [ROLES.SUPER, ROLES.TEACHER];
 
 export const navGroups = [
   {
@@ -62,7 +63,6 @@ export const navGroups = [
   {
     label: '基础管理',
     items: [
-      { key: 'users', path: '/users', label: '用户管理', summary: '维护账号、角色、院系和启停状态。', roles: adminRoles },
       { key: 'organization', path: '/organization', label: '组织架构', summary: '维护学校、学院、专业和班级组织关系。', roles: adminRoles },
       { key: 'params', path: '/params', label: '系统参数', summary: '维护基础参数、认证阈值与系统配置。', roles: adminRoles },
       { key: 'logs', path: '/logs', label: '操作日志', summary: '查询登录记录、业务操作和导出历史。', roles: adminRoles },
@@ -113,6 +113,12 @@ export const navGroups = [
     items: [
       { key: 'report-super', path: '/report', label: '自评报告', summary: '维护完整报告大纲、分工和导出。', roles: adminRoles },
       { key: 'report-teacher', path: '/report', label: '自评报告', summary: '维护本人负责的报告章节和支撑内容。', roles: teacherRoles, showInNav: false }
+    ]
+  },
+  {
+    label: '用户管理',
+    items: [
+      { key: 'users', path: '/users', label: '用户管理', summary: '统一维护管理员、老师和学生账号，支持单独新增、批量添加和启停管理。', roles: userManagementRoles }
     ]
   },
   {

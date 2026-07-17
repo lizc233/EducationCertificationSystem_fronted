@@ -150,6 +150,7 @@ import { useRouter } from 'vue-router';
 import StandardPage from '../components/page/StandardPage.vue';
 import SectionCard from '../components/page/SectionCard.vue';
 import { ROLES } from '../data/navigation';
+import { getRoleStatSummary, getUserDirectory } from '../data/users';
 import { useUserStore } from '../store/user';
 
 const router = useRouter();
@@ -157,6 +158,7 @@ const userStore = useUserStore();
 
 const isSuper = computed(() => userStore.userInfo.role === ROLES.SUPER);
 const isTeacher = computed(() => userStore.userInfo.role === ROLES.TEACHER);
+const adminUserStats = computed(() => getRoleStatSummary(getUserDirectory()));
 
 const teacherCourseRows = [
   { course: '软件工程', className: '软工 2301', schedule: '周一 1-2 节', status: '待审核' },
@@ -171,7 +173,8 @@ const dashboardContent = computed(() => {
       description: '围绕课程、课表、成绩提交、学生名单和课程公告组织教师首页内容。',
       actions: [
         { label: '进入我的课程', path: '/my-courses', type: 'primary' },
-        { label: '进入成绩录入', path: '/score-input' }
+        { label: '进入成绩录入', path: '/score-input' },
+        { label: '进入用户管理', path: '/users' }
       ],
       metrics: [
         { label: '我的课程数', value: '6', trend: 8, sub: '本学期共承担 6 门课程。' },
@@ -184,7 +187,8 @@ const dashboardContent = computed(() => {
         { path: '/my-courses', label: '我的课程', summary: '查看任教课程、班级人数和资源入口。', group: '我的工作台' },
         { path: '/my-schedule', label: '我的课表', summary: '查看本周上课时间、教室和节次安排。', group: '我的工作台' },
         { path: '/course-students', label: '课程学生名单', summary: '查看学生名单并导出。', group: '我的工作台' },
-        { path: '/course-announcements', label: '课程公告', summary: '向班级发布课程通知和作业提醒。', group: '我的工作台' }
+        { path: '/course-announcements', label: '课程公告', summary: '向班级发布课程通知和作业提醒。', group: '我的工作台' },
+        { path: '/users', label: '用户管理', summary: '新增、批量添加并维护三类用户账号。', group: '用户管理' }
       ],
       rightTitle: '今日待办',
       rightList: [
@@ -245,7 +249,7 @@ const dashboardContent = computed(() => {
       { label: '查看成绩审核', path: '/score-audit' }
     ],
     metrics: [
-      { label: '总用户数', value: '128', trend: 8, sub: '覆盖管理员、教师与学生三类账号。' },
+      { label: '总用户数', value: String(adminUserStats.value.total), trend: 8, sub: '覆盖管理员、老师与学生三类账号。' },
       { label: '进行中方案数', value: '18', trend: 11, sub: '含启用版本与待归档版本。' },
       { label: '待处理预警数', value: '7', trend: -5, sub: '低于阈值的达成度与回收率问题。' },
       { label: '进行中选课任务数', value: '6', trend: 12, sub: '当前开放中的课程选课任务。' },
@@ -253,7 +257,7 @@ const dashboardContent = computed(() => {
     ],
     quickTitle: '快捷入口',
     quickEntries: [
-      { path: '/users', label: '用户管理', summary: '维护账号、角色、院系与启停状态。', group: '基础管理' },
+      { path: '/users', label: '用户管理', summary: '维护三类用户账号，支持单独新增、批量添加和启停管理。', group: '用户管理' },
       { path: '/program', label: '方案管理', summary: '维护培养方案版本和适用年级。', group: '方案与课程' },
       { path: '/course-selection-management', label: '选课管理', summary: '发布选课任务并查看选课名单。', group: '选课与成绩' },
       { path: '/report', label: '自评报告', summary: '进入报告大纲、章节编辑和导出页面。', group: '报告中心' }
@@ -261,7 +265,7 @@ const dashboardContent = computed(() => {
     rightTitle: '待审核事项',
     rightList: [
       { title: '待审核成绩 2 批次', desc: '软件工程 2301 与软件工程 2302 批次已于 2026 年 7 月 17 日提交。', time: '2026-07-17', path: '/score-audit' },
-      { title: '新注册教师待审核', desc: '计算机学院提交 3 个教师账号申请，请确认角色和院系。', time: '2026-07-17', path: '/users' },
+      { title: '新增教师账号待核验', desc: '计算机学院新增 3 个教师账号，请核验工号、角色和院系信息。', time: '2026-07-17', path: '/users' },
       { title: '培养方案版本待确认', desc: '2025 版软件工程培养方案已提交归档确认。', time: '2026-07-18', path: '/program' }
     ],
     leftBottomTitle: '系统运行状态',

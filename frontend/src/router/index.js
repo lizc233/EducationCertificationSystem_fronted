@@ -38,6 +38,7 @@ import CourseSelectionView from '../views/pages/CourseSelectionView.vue';
 import CourseAnnouncementsFeedView from '../views/pages/CourseAnnouncementsFeedView.vue';
 import AcademicProgressView from '../views/pages/AcademicProgressView.vue';
 import CourseEvaluateView from '../views/pages/CourseEvaluateView.vue';
+import UserManage from '../views/UserManage.vue';
 
 const appTitle = '工程教育认证智能服务系统';
 const allRoles = [ROLES.SUPER, ROLES.TEACHER, ROLES.STUDENT];
@@ -49,7 +50,7 @@ const superAndTeacher = [ROLES.SUPER, ROLES.TEACHER];
 
 const pageRoutes = [
   { path: 'dashboard', name: 'dashboard', component: DashboardView, meta: { title: '首页概览', roles: allRoles } },
-  { path: 'users', name: 'users', component: ConfigCrudPageView, props: { pageKey: 'users' }, meta: { title: '用户管理', roles: superOnly } },
+  { path: 'users', name: 'users', component: UserManage, meta: { title: '用户管理', roles: superAndTeacher } },
   { path: 'organization', name: 'organization', component: OrganizationView, meta: { title: '组织架构', roles: superOnly } },
   { path: 'params', name: 'params', component: ConfigCrudPageView, props: { pageKey: 'params' }, meta: { title: '系统参数', roles: superOnly } },
   { path: 'logs', name: 'logs', component: ConfigCrudPageView, props: { pageKey: 'logs' }, meta: { title: '操作日志', roles: superOnly } },
@@ -140,7 +141,8 @@ const accessFallbackMap = {
   '/course-evaluate': { [ROLES.SUPER]: '/survey/fill', [ROLES.TEACHER]: '/teaching-feedback' },
   '/course-selection-management': { [ROLES.TEACHER]: '/dashboard', [ROLES.STUDENT]: '/course-selection' },
   '/score-audit': { [ROLES.TEACHER]: '/score-input', [ROLES.STUDENT]: '/my-scores' },
-  '/announcements': { [ROLES.TEACHER]: '/course-announcements', [ROLES.STUDENT]: '/course-announcements-view' }
+  '/announcements': { [ROLES.TEACHER]: '/course-announcements', [ROLES.STUDENT]: '/course-announcements-view' },
+  '/users': { [ROLES.STUDENT]: '/dashboard' }
 };
 
 router.beforeEach(async (to) => {

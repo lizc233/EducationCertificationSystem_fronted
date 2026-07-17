@@ -64,11 +64,12 @@ const MODULE_THEME_MAP = {
   '选课与成绩': { key: 'score', label: '选课与成绩', eyebrow: '选课成绩', code: 'SR-05' },
   '问卷与改进': { key: 'improve', label: '问卷与改进', eyebrow: '问卷改进', code: 'FI-06' },
   报告中心: { key: 'report', label: '报告中心', eyebrow: '报告中心', code: 'RC-07' },
-  我的工作台: { key: 'teacher-workbench', label: '我的工作台', eyebrow: '教学事务', code: 'TW-08' },
-  成绩管理: { key: 'score', label: '成绩管理', eyebrow: '成绩事务', code: 'SM-09' },
-  我的学习: { key: 'student', label: '我的学习', eyebrow: '学习服务', code: 'ST-10' },
-  课程评价: { key: 'student', label: '课程评价', eyebrow: '课程评价', code: 'CE-11' },
-  问卷填报: { key: 'survey', label: '问卷填报', eyebrow: '问卷服务', code: 'SV-12' }
+  用户管理: { key: 'user-admin', label: '用户管理', eyebrow: '账号治理', code: 'UM-08' },
+  我的工作台: { key: 'teacher-workbench', label: '我的工作台', eyebrow: '教学事务', code: 'TW-09' },
+  成绩管理: { key: 'score', label: '成绩管理', eyebrow: '成绩事务', code: 'SM-10' },
+  我的学习: { key: 'student', label: '我的学习', eyebrow: '学习服务', code: 'ST-11' },
+  课程评价: { key: 'student', label: '课程评价', eyebrow: '课程评价', code: 'CE-12' },
+  问卷填报: { key: 'survey', label: '问卷填报', eyebrow: '问卷服务', code: 'SV-13' }
 };
 
 const currentRole = computed(() => userStore.userInfo.role);

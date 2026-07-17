@@ -47,7 +47,7 @@
       <div class="login-form-panel">
         <div class="login-form-panel__meta">账号登录</div>
         <h2 class="login-form-panel__title">欢迎进入系统</h2>
-        <p class="login-form-panel__desc">请输入账号、密码和验证码后登录。</p>
+        <p class="login-form-panel__desc">请输入账号、密码和验证码后登录。系统不开放注册，所有账号均由管理员统一创建。</p>
 
         <el-form
           ref="formRef"
@@ -57,8 +57,8 @@
           class="login-form"
           @keyup.enter.prevent="submit"
         >
-          <el-form-item label="用户名" prop="username">
-            <el-input v-model.trim="form.username" placeholder="请输入用户名" size="large" />
+          <el-form-item label="账号" prop="account">
+            <el-input v-model.trim="form.account" placeholder="请输入工号、学号、手机号或邮箱" size="large" />
           </el-form-item>
           <el-form-item label="密码" prop="password">
             <el-input v-model="form.password" type="password" show-password placeholder="请输入密码" size="large" />
@@ -82,14 +82,14 @@
         </el-form>
 
         <div class="login-shortcuts">
-          <div class="preset-role-tip">选择角色后将自动填入账号，密码统一为 123456。</div>
+          <div class="preset-role-tip">管理员和老师可用工号、手机号或邮箱登录，学生可用学号、手机号或邮箱登录，初始密码统一为 123456。</div>
           <div class="preset-role-grid">
             <button
               v-for="item in rolePresets"
               :key="item.value"
               type="button"
-              :class="['preset-role', { 'is-active': form.username === item.value }]"
-              @click="applyPreset(item.value)"
+              :class="['preset-role', { 'is-active': form.account === item.account }]"
+              @click="applyPreset(item.account)"
             >
               <span class="preset-role__label">{{ item.label }}</span>
               <span class="preset-role__account">{{ item.account }}</span>
@@ -99,7 +99,7 @@
         </div>
 
         <div class="login-panel-footer">
-          <span>如需修改账户信息，请联系系统管理员。</span>
+          <span>账号新增、停用或信息变更请联系管理员或教务老师。</span>
           <a href="#" @click.prevent>忘记密码</a>
         </div>
       </div>
@@ -112,6 +112,7 @@ import { computed, onMounted, reactive, ref, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { ElMessage } from 'element-plus';
 import { useUserStore } from '../store/user';
+import { DEFAULT_PASSWORD, USER_ROLES, getUserDirectory } from '../data/users';
 
 const route = useRoute();
 const router = useRouter();
@@ -121,24 +122,30 @@ const formRef = ref();
 const loading = ref(false);
 const captchaCode = ref(generateCaptchaCode());
 
+const presetUsers = getUserDirectory();
+
+function findPresetAccount(role) {
+  return presetUsers.find((item) => item.role === role)?.accountId || '';
+}
+
 const rolePresets = [
   {
-    value: 'admin',
-    label: '超级管理员',
-    account: 'admin',
-    desc: '教务与系统管理'
+    value: USER_ROLES.ADMIN,
+    label: '管理员',
+    account: findPresetAccount(USER_ROLES.ADMIN),
+    desc: '工号 / 手机号 / 邮箱'
   },
   {
-    value: 'teacher',
-    label: '教学老师',
-    account: 'teacher',
-    desc: '课程与成绩办理'
+    value: USER_ROLES.TEACHER,
+    label: '老师',
+    account: findPresetAccount(USER_ROLES.TEACHER),
+    desc: '工号 / 手机号 / 邮箱'
   },
   {
-    value: 'student',
+    value: USER_ROLES.STUDENT,
     label: '学生',
-    account: 'student',
-    desc: '学习与填报服务'
+    account: findPresetAccount(USER_ROLES.STUDENT),
+    desc: '学号 / 手机号 / 邮箱'
   }
 ];
 
@@ -164,20 +171,20 @@ const highlights = [
 ];
 
 const form = reactive({
-  username: 'admin',
-  password: '123456',
+  account: rolePresets[0]?.account || '',
+  password: DEFAULT_PASSWORD,
   captcha: ''
 });
 
 const rules = {
-  username: [{ required: true, message: '请输入用户名', trigger: 'blur' }],
+  account: [{ required: true, message: '请输入账号', trigger: 'blur' }],
   password: [{ required: true, message: '请输入密码', trigger: 'blur' }],
   captcha: [{ required: true, message: '请输入验证码', trigger: 'blur' }]
 };
 
 function resetLoginState() {
-  form.username = 'admin';
-  form.password = '123456';
+  form.account = rolePresets[0]?.account || '';
+  form.password = DEFAULT_PASSWORD;
   form.captcha = '';
   loading.value = false;
   if (formRef.value) {
@@ -208,9 +215,9 @@ function refreshCaptcha() {
   form.captcha = '';
 }
 
-function applyPreset(role) {
-  form.username = role;
-  form.password = '123456';
+function applyPreset(account) {
+  form.account = account;
+  form.password = DEFAULT_PASSWORD;
   refreshCaptcha();
 }
 
@@ -228,7 +235,7 @@ async function submit() {
 
   loading.value = true;
   try {
-    await userStore.login(form.username, form.password, form.captcha);
+    await userStore.login(form.account, form.password, form.captcha);
     ElMessage.success('登录成功');
     await router.push('/dashboard');
   } catch (error) {
