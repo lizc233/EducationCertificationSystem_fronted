@@ -5,7 +5,7 @@
         <div class="portal-link-row">
           <span>工程教育认证智能服务系统</span>
           <span>统一身份认证</span>
-          <span>消息与待办</span>
+          <span>业务消息中心</span>
         </div>
         <div class="portal-tool-row">
           <span>{{ todayLabel }}</span>
@@ -31,9 +31,9 @@
         <div class="portal-header__tools">
           <div class="portal-search">
             <el-input
-              v-model.trim="searchKeyword"
-              placeholder="搜索功能页面、模块或关键字"
-              @keydown.enter.prevent="goSearch"
+                v-model.trim="searchKeyword"
+                placeholder="搜索功能页面、模块或关键字"
+                @keydown.enter.prevent="goSearch"
             >
               <template #append>
                 <el-button @click="goSearch">搜索</el-button>
@@ -41,7 +41,7 @@
             </el-input>
           </div>
           <el-badge :value="unreadCount">
-            <el-button @click="router.push('/messages')">消息通知</el-button>
+            <el-button @click="router.push('/messages')">通知中心</el-button>
           </el-badge>
           <el-dropdown @command="handleCommand">
             <el-button type="primary">{{ userStore.userInfo.realName || '未登录用户' }}</el-button>
@@ -59,16 +59,16 @@
     <div ref="primaryNavRef" class="portal-nav portal-nav--primary">
       <div class="portal-nav__inner">
         <el-menu
-          :default-active="activePrimary"
-          class="portal-menu"
-          mode="horizontal"
-          :ellipsis="false"
-          @select="handlePrimarySelect"
+            :default-active="activePrimary"
+            class="portal-menu"
+            mode="horizontal"
+            :ellipsis="false"
+            @select="handlePrimarySelect"
         >
           <el-menu-item
-            v-for="group in visibleGroups"
-            :key="group.label"
-            :index="group.defaultPath"
+              v-for="group in visibleGroups"
+              :key="group.label"
+              :index="group.defaultPath"
           >
             {{ group.label }}
           </el-menu-item>
@@ -79,16 +79,16 @@
     <div ref="secondaryNavRef" class="portal-nav portal-nav--secondary">
       <div class="portal-nav__inner">
         <el-menu
-          :default-active="activeSecondary"
-          class="portal-menu portal-menu--secondary"
-          mode="horizontal"
-          :ellipsis="false"
-          @select="handleSecondarySelect"
+            :default-active="activeSecondary"
+            class="portal-menu portal-menu--secondary"
+            mode="horizontal"
+            :ellipsis="false"
+            @select="handleSecondarySelect"
         >
           <el-menu-item
-            v-for="item in currentGroup.items"
-            :key="item.key"
-            :index="item.path"
+              v-for="item in currentGroup.items"
+              :key="item.key"
+              :index="item.path"
           >
             {{ item.label }}
           </el-menu-item>
@@ -104,14 +104,27 @@
           <p class="portal-hero__summary">{{ heroContent.summary }}</p>
           <div class="portal-hero__meta">
             <span
-              v-for="tag in heroContent.tags"
-              :key="tag"
-              class="portal-chip"
+                v-for="tag in heroContent.tags"
+                :key="tag"
+                class="portal-chip"
             >
               {{ tag }}
             </span>
           </div>
         </article>
+
+        <div class="portal-hero__aside">
+          <article class="portal-aside-card">
+            <div class="portal-aside-card__label">当前角色</div>
+            <div class="portal-aside-card__value">{{ roleLabel }}</div>
+            <div class="portal-aside-card__text">系统将根据当前登录角色自动过滤菜单、页面入口与操作权限。</div>
+          </article>
+          <article class="portal-aside-card">
+            <div class="portal-aside-card__label">当前模块</div>
+            <div class="portal-aside-card__value">{{ currentGroupMeta.label }}</div>
+            <div class="portal-aside-card__text">一级导航定位业务域，二级导航直达功能页，所有交互统一跳转独立路由。</div>
+          </article>
+        </div>
       </div>
     </section>
 
@@ -131,7 +144,7 @@
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import { ElMessage } from 'element-plus';
 import { useRoute, useRouter } from 'vue-router';
-import { countUnreadMessages } from '../data/messages';
+import { fetchUnreadCount } from '../api/notice';
 import {
   getSearchableNavItems,
   getVisibleNavGroups,
@@ -153,6 +166,7 @@ const primaryNavRef = ref();
 const secondaryNavRef = ref();
 const footerRef = ref();
 const chromeHeight = ref(0);
+const unreadCount = ref(0);
 
 const currentRole = computed(() => userStore.userInfo.role || ROLES.SUPER);
 const resolvedNavPath = computed(() => resolveNavPath(String(route.query.from || route.path), currentRole.value));
@@ -161,9 +175,9 @@ const currentNav = computed(() => resolveNavItem(resolvedNavPath.value, currentR
 const currentGroupMeta = computed(() => resolveNavGroup(resolvedNavPath.value, currentRole.value));
 const currentGroup = computed(() => {
   return visibleGroups.value.find((group) => group.label === currentGroupMeta.value.label)
-    || visibleGroups.value.find((group) => group.items.some((item) => item.path === resolvedNavPath.value))
-    || visibleGroups.value[0]
-    || { label: '首页概览', items: [], defaultPath: '/dashboard' };
+      || visibleGroups.value.find((group) => group.items.some((item) => item.path === resolvedNavPath.value))
+      || visibleGroups.value[0]
+      || { label: '工作台', items: [], defaultPath: '/dashboard' };
 });
 const showHero = computed(() => resolvedNavPath.value === '/dashboard');
 const activePrimary = computed(() => currentGroup.value.defaultPath || visibleGroups.value[0]?.defaultPath || '/dashboard');
@@ -171,30 +185,29 @@ const activeSecondary = computed(() => {
   return currentGroup.value.items.some((item) => item.path === resolvedNavPath.value) ? resolvedNavPath.value : '';
 });
 const mainMinHeight = computed(() => `calc(100vh - ${chromeHeight.value}px)`);
-const unreadCount = computed(() => countUnreadMessages());
 const roleLabel = computed(() => ROLE_LABEL_MAP[currentRole.value] || '未分配角色');
 
 const heroContent = computed(() => {
   if (currentRole.value === ROLES.TEACHER) {
     return {
-      title: '教学工作总览',
-      summary: '集中处理课程安排、成绩提交、课程资源、课表提醒与学生反馈，保持教学事项闭环办理。',
-      tags: ['课程任务', '成绩提交', '教学通知', '反馈查看']
+      title: '聚焦授课执行、成绩录入与课程材料闭环',
+      summary: '教师工作台只保留与本人教学直接相关的任务入口，让授课安排、成绩填报、资源上传和问卷反馈集中在同一工作流中。',
+      tags: ['我的授课', '成绩录入', '课程资源', '教学待办']
     };
   }
 
   if (currentRole.value === ROLES.STUDENT) {
     return {
-      title: '学习服务总览',
-      summary: '集中查看选课、课表、成绩、课程公告与学业进度，常用学习事项在同一入口完成。',
-      tags: ['选课办理', '成绩查询', '学习进度', '课程评价']
+      title: '聚焦学业进度、成绩查询与参与反馈',
+      summary: '学生视图突出课程成绩、达成度报告和问卷填报，减少无关管理入口，让信息获取更直接、更清晰。',
+      tags: ['成绩查询', '达成度报告', '问卷填报', '学业进度']
     };
   }
 
   return {
-    title: '认证业务管理总览',
-    summary: '集中查看培养方案、课程建设、评价分析、选课成绩、问卷改进与报告工作，支持全局管理与过程监控。',
-    tags: ['统一入口', '业务联动', '过程留痕', '数据总览']
+    title: currentNav.value.label || '聚焦认证管理、过程监控与持续改进',
+    summary: '管理员视图覆盖培养方案、课程体系、评价达成、问卷改进和自评报告等核心业务，形成一体化管理与监控闭环。',
+    tags: ['全局监控', '方案治理', '达成分析', '报告中心']
   };
 });
 
@@ -226,6 +239,19 @@ function computeChromeHeight() {
     secondaryNavRef.value,
     footerRef.value
   ].reduce((total, element) => total + (element?.offsetHeight || 0), 0);
+}
+
+async function syncUnreadCount() {
+  const userId = userStore.userInfo.id;
+  if (!userId) {
+    unreadCount.value = 0;
+    return;
+  }
+  unreadCount.value = Number(await fetchUnreadCount(userId) || 0);
+}
+
+function handleUnreadCountChanged(event) {
+  unreadCount.value = Number(event?.detail ?? 0);
 }
 
 function handlePrimarySelect(path) {
@@ -272,7 +298,9 @@ async function handleCommand(command) {
 onMounted(async () => {
   await nextTick();
   computeChromeHeight();
+  await syncUnreadCount();
   window.addEventListener('resize', computeChromeHeight);
+  window.addEventListener('notice-unread-changed', handleUnreadCountChanged);
 });
 
 watch(
@@ -280,10 +308,19 @@ watch(
   async () => {
     await nextTick();
     computeChromeHeight();
+    await syncUnreadCount();
+  }
+);
+
+watch(
+  () => userStore.userInfo.id,
+  async () => {
+    await syncUnreadCount();
   }
 );
 
 onBeforeUnmount(() => {
   window.removeEventListener('resize', computeChromeHeight);
+  window.removeEventListener('notice-unread-changed', handleUnreadCountChanged);
 });
 </script>
