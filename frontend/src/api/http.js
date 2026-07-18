@@ -16,7 +16,7 @@ req.interceptors.response.use(
   (res) => {
     const d = res.data;
     if (d && typeof d === 'object' && Object.prototype.hasOwnProperty.call(d, 'code')) {
-      if (d.code === 200 || d.code === 0) return d.data ?? d;
+      if (d.code === 1 || d.code === 200) return d.data ?? d;
       ElMessage.error(d.msg || d.message || '请求失败');
       return Promise.reject(d);
     }
@@ -34,6 +34,14 @@ export function get(url, params, cfg = {}) {
 
 export function post(url, data, cfg = {}) {
   return req.post(url, data, cfg);
+}
+
+export function put(url, data, cfg = {}) {
+  return req.put(url, data, cfg);
+}
+
+export function del(url, cfg = {}) {
+  return req.delete(url, cfg);
 }
 
 export default req;

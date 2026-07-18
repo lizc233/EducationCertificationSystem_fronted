@@ -16,10 +16,13 @@ import CourseTeachingView from '../views/pages/CourseTeachingView.vue';
 import CourseResourcesView from '../views/pages/CourseResourcesView.vue';
 import EvaluationScoresView from '../views/pages/EvaluationScoresView.vue';
 import MessagesView from '../views/pages/MessagesView.vue';
+import AchievementModelView from '../views/pages/AchievementModelView.vue';
 import AchievementCourseView from '../views/pages/AchievementCourseView.vue';
 import AchievementGraduateView from '../views/pages/AchievementGraduateView.vue';
 import AchievementDashboardView from '../views/pages/AchievementDashboardView.vue';
+import SurveyManagementView from '../views/pages/SurveyManagementView.vue';
 import SurveyFillView from '../views/pages/SurveyFillView.vue';
+import ImprovePlanView from '../views/pages/ImprovePlanView.vue';
 import ReportView from '../views/pages/ReportView.vue';
 import AiAssistantView from '../views/pages/AiAssistantView.vue';
 import RecordWorkspaceView from '../views/pages/RecordWorkspaceView.vue';
@@ -73,15 +76,15 @@ const pageRoutes = [
   { path: 'courses/resources', name: 'course-resources', component: CourseResourcesView, meta: { title: '课程资源管理', roles: superOnly } },
   { path: 'evaluation/materials', name: 'evaluation-materials', component: ConfigCrudPageView, props: { pageKey: 'evaluation-materials' }, meta: { title: '考核证据材料管理', roles: superAndTeacher } },
   { path: 'evaluation/scores', name: 'evaluation-scores', component: EvaluationScoresView, meta: { title: '按课程目标成绩管理', roles: superOnly } },
-  { path: 'achievement/model', name: 'achievement-model', component: ConfigCrudPageView, props: { pageKey: 'achievement-model' }, meta: { title: '达成度评价模型配置', roles: superOnly } },
+  { path: 'achievement/model', name: 'achievement-model', component: AchievementModelView, meta: { title: '达成度评价模型配置', roles: superOnly } },
   { path: 'achievement/course', name: 'achievement-course', component: AchievementCourseView, meta: { title: '课程目标达成度评价', roles: superOnly } },
   { path: 'achievement/graduate', name: 'achievement-graduate', component: AchievementGraduateView, meta: { title: '毕业要求达成度评价与预警', roles: superOnly } },
   { path: 'achievement/dashboard', name: 'achievement-dashboard', component: AchievementDashboardView, meta: { title: '达成度统计分析看板', roles: superOnly } },
   { path: 'course-selection-management', name: 'course-selection-management', component: CourseSelectionManagementView, meta: { title: '选课管理', roles: superOnly } },
   { path: 'score-audit', name: 'score-audit', component: ScoreAuditView, meta: { title: '成绩审核', roles: superOnly } },
-  { path: 'survey', name: 'survey', component: ConfigCrudPageView, props: { pageKey: 'survey' }, meta: { title: '问卷设计与管理', roles: superOnly } },
+  { path: 'survey', name: 'survey', component: SurveyManagementView, meta: { title: '问卷设计与管理', roles: superOnly } },
   { path: 'survey/fill', name: 'survey-fill', component: SurveyFillView, meta: { title: '问卷填报与统计', roles: allRoles } },
-  { path: 'improve', name: 'improve', component: ConfigCrudPageView, props: { pageKey: 'improve' }, meta: { title: '持续改进计划', roles: superAndTeacher } },
+  { path: 'improve', name: 'improve', component: ImprovePlanView, meta: { title: '持续改进计划', roles: superAndTeacher } },
   { path: 'report', name: 'report', component: ReportView, meta: { title: '自评报告', roles: superAndTeacher } },
   { path: 'ai', name: 'ai', component: AiAssistantView, meta: { title: 'AI 助手', roles: superOnly } },
   { path: 'messages', name: 'messages', component: MessagesView, meta: { title: '消息通知中心', roles: allRoles } },
