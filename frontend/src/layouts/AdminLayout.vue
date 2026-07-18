@@ -291,8 +291,8 @@ async function handleCommand(command) {
     return;
   }
 
-  userStore.logout();
-  await router.push({ path: '/login', query: { reset: String(Date.now()) } });
+  await userStore.logout();
+  await router.replace({ path: '/login', query: { reset: String(Date.now()) } });
 }
 
 onMounted(async () => {

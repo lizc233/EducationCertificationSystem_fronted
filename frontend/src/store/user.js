@@ -115,6 +115,7 @@ export const useUserStore = defineStore('user', {
     },
     async logout() {
       const token = this.token;
+      this.clearAuthState();
       try {
         if (token) {
           await request.post(
@@ -128,9 +129,7 @@ export const useUserStore = defineStore('user', {
           );
         }
       } catch {
-        // Ignore logout failures and clear local state anyway.
-      } finally {
-        this.clearAuthState();
+        // Ignore logout failures because local auth state is already cleared.
       }
     }
   }

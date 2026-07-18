@@ -488,10 +488,16 @@ async function fetchRoleOptions() {
   const rows = await request.get('/user/roles');
   roleOptions.value = rows
     .map((item) => ({
-      label: ROLE_LABEL_MAP[item.code] || item.name || item.code,
-      value: item.code
+      label: ROLE_LABEL_MAP[item.roleCode] || item.roleName || item.roleCode || item.code || item.name,
+      value: item.roleCode || item.code || ''
     }))
-    .sort((left, right) => ROLE_ORDER.indexOf(left.value) - ROLE_ORDER.indexOf(right.value));
+    .filter((item) => item.value)
+    .sort((left, right) => {
+      const leftIndex = ROLE_ORDER.indexOf(left.value);
+      const rightIndex = ROLE_ORDER.indexOf(right.value);
+      return (leftIndex === -1 ? Number.MAX_SAFE_INTEGER : leftIndex)
+        - (rightIndex === -1 ? Number.MAX_SAFE_INTEGER : rightIndex);
+    });
 }
 
 async function loadSnapshot() {
