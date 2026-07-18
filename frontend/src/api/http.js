@@ -1,4 +1,4 @@
-import axios from 'axios';
+﻿import axios from 'axios';
 import { ElMessage } from 'element-plus';
 
 const req = axios.create({
@@ -7,7 +7,7 @@ const req = axios.create({
 });
 
 req.interceptors.request.use((cfg) => {
-  const tk = localStorage.getItem('ecs_token');
+  const tk = localStorage.getItem('ecs_token') || localStorage.getItem('education_space_token');
   if (tk) cfg.headers.Authorization = `Bearer ${tk}`;
   return cfg;
 });
@@ -17,13 +17,13 @@ req.interceptors.response.use(
     const d = res.data;
     if (d && typeof d === 'object' && Object.prototype.hasOwnProperty.call(d, 'code')) {
       if (d.code === 1 || d.code === 200) return d.data ?? d;
-      ElMessage.error(d.msg || d.message || '请求失败');
+      if (!res.config?.skipErrorMessage) ElMessage.error(d.msg || d.message || 'Request failed');
       return Promise.reject(d);
     }
     return d;
   },
   (err) => {
-    ElMessage.error(err?.response?.data?.msg || err.message || '请求失败');
+    if (!err?.config?.skipErrorMessage) ElMessage.error(err?.response?.data?.msg || err.message || 'Request failed');
     return Promise.reject(err);
   }
 );
@@ -45,3 +45,4 @@ export function del(url, cfg = {}) {
 }
 
 export default req;
+

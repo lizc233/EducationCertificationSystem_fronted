@@ -1,4 +1,4 @@
-import { del, get, post, put } from './http';
+﻿import { del, get, post, put } from './http';
 
 function buildQuery(params = {}) {
   const query = new URLSearchParams();
@@ -11,8 +11,8 @@ function buildQuery(params = {}) {
   return query.toString();
 }
 
-export function fetchSurveyQuestionnaires(params) {
-  return get('/surveys/questionnaires', params);
+export function fetchSurveyQuestionnaires(params, cfg) {
+  return get('/surveys/questionnaires', params, cfg);
 }
 
 export function fetchSurveyQuestionnaireDetail(id) {
@@ -87,3 +87,4 @@ export function buildSurveyResponseDownloadUrl(questionnaireId, params) {
   const query = buildQuery(params);
   return `${import.meta.env.VITE_API_BASE_URL || '/api'}/surveys/questionnaires/${questionnaireId}/download/responses${query ? `?${query}` : ''}`;
 }
+
