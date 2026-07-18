@@ -4,8 +4,16 @@ export function fetchInbox(params) {
   return get('/notice/recipients/inbox', params, { baseURL: '' });
 }
 
-export function fetchUnreadCount(recipientUserId) {
-  return get('/notice/recipients/unread-count', { recipientUserId }, { baseURL: '' });
+export function fetchRecipientList(params, cfg = {}) {
+  return get('/notice/recipients/list', params, { baseURL: '', ...cfg });
+}
+
+export function fetchNoticeMessage(id, cfg = {}) {
+  return get(`/notice/messages/${id}`, undefined, { baseURL: '', ...cfg });
+}
+
+export function fetchUnreadCount(recipientUserId, cfg = {}) {
+  return get('/notice/recipients/unread-count', { recipientUserId }, { baseURL: '', ...cfg });
 }
 
 export function markNoticeRead(id) {

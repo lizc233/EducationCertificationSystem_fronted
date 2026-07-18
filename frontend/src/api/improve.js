@@ -1,7 +1,7 @@
-import { del, get, post, put } from './http';
+﻿import { del, get, post, put } from './http';
 
-export function fetchImprovePlans(params) {
-  return get('/improve/plans', params);
+export function fetchImprovePlans(params, cfg) {
+  return get('/improve/plans', params, cfg);
 }
 
 export function fetchOverdueImprovePlans(params) {
@@ -55,3 +55,4 @@ export function updateImproveRecord(recordId, data) {
 export function deleteImproveRecord(recordId) {
   return del(`/improve/plans/records/${recordId}`);
 }
+

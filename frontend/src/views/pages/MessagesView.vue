@@ -2,38 +2,32 @@
   <StandardPage
     title="消息通知中心"
     :breadcrumbs="['首页', '工作台', '消息通知中心']"
-    description="统一接收达成度预警、问卷提醒、自评任务和系统消息，支持按状态筛选、批量已读和消息详情追踪。"
+    description="查看站内消息、已读状态和发送时间。"
   >
     <template #actions>
       <el-badge :value="unreadCount" :hidden="!unreadCount">
-        <el-button type="primary" :loading="markingAll" @click="handleMarkAllRead">全部已读</el-button>
+        <el-button
+          type="primary"
+          :loading="markingAll"
+          :disabled="!messages.length"
+          @click="handleMarkAllRead"
+        >
+          全部标为已读
+        </el-button>
       </el-badge>
-      <el-button :loading="refreshing" @click="refreshAll">刷新消息</el-button>
+      <el-button :loading="refreshing" @click="refreshAll">刷新</el-button>
     </template>
 
     <template #filters>
       <el-form :inline="true" :model="filters" class="message-filter-form">
-        <el-form-item label="标题">
-          <el-input v-model.trim="filters.title" clearable placeholder="按标题搜索" style="width: 220px;" />
-        </el-form-item>
-        <el-form-item label="消息类型">
-          <el-select v-model="filters.noticeType" clearable placeholder="全部类型" style="width: 180px;">
-            <el-option
-              v-for="option in noticeTypeOptions"
-              :key="option.value"
-              :label="option.label"
-              :value="option.value"
-            />
-          </el-select>
-        </el-form-item>
         <el-form-item label="阅读状态">
-          <el-select v-model="filters.readStatus" clearable placeholder="全部状态" style="width: 160px;">
+          <el-select v-model="filters.readStatus" clearable placeholder="全部状态" style="width: 180px;">
             <el-option label="未读" :value="0" />
             <el-option label="已读" :value="1" />
           </el-select>
         </el-form-item>
         <el-form-item>
-          <el-button type="primary" :loading="loading" @click="fetchInboxList">查询</el-button>
+          <el-button type="primary" :loading="loading" @click="handleSearch">查询</el-button>
           <el-button @click="resetFilters">重置</el-button>
         </el-form-item>
       </el-form>
@@ -44,70 +38,80 @@
         <SectionCard title="收件概览">
           <div class="message-kpis">
             <article class="message-kpi">
-              <div class="message-kpi__label">总消息数</div>
+              <div class="message-kpi__label">消息总数</div>
               <div class="message-kpi__value">{{ pager.total }}</div>
-              <div class="message-kpi__desc">当前筛选条件下的收件总量</div>
+              <div class="message-kpi__desc">当前筛选条件下的消息数量。</div>
             </article>
             <article class="message-kpi">
               <div class="message-kpi__label">未读消息</div>
               <div class="message-kpi__value">{{ unreadCount }}</div>
-              <div class="message-kpi__desc">需要优先处理的消息提醒</div>
+              <div class="message-kpi__desc">等待处理的消息提醒。</div>
             </article>
             <article class="message-kpi">
               <div class="message-kpi__label">当前查看</div>
               <div class="message-kpi__value">{{ currentMessage ? 1 : 0 }}</div>
-              <div class="message-kpi__desc">支持查看业务来源和关联对象</div>
+              <div class="message-kpi__desc">右侧展示当前选中的消息详情。</div>
             </article>
           </div>
         </SectionCard>
 
-        <SectionCard title="收件列表">
-          <div v-loading="loading" class="message-list soft-scrollbar">
-            <button
-              v-for="item in messages"
-              :key="item.recipientId"
-              type="button"
-              class="message-list-item"
-              :class="{ 'is-active': item.recipientId === activeRecipientId }"
-              @click="openMessage(item)"
-            >
-              <div class="message-list-item__head">
-                <span class="message-list-item__title">{{ item.title || '未命名消息' }}</span>
-                <span class="message-list-item__time">{{ formatDateTime(item.sendAt || item.recipientCreatedAt) }}</span>
-              </div>
-              <div class="message-list-item__meta">
-                <span class="small-tag">{{ resolveNoticeType(item.noticeType) }}</span>
-                <span class="small-tag">{{ item.bizType || 'SYSTEM' }}</span>
-                <span
-                  :class="['small-tag', item.readStatus === 1 ? 'tag-blue' : 'tag-red']"
-                >
-                  {{ item.readStatus === 1 ? '已读' : '未读' }}
-                </span>
-              </div>
-              <p class="message-list-item__snippet">
-                {{ ellipsis(item.content) }}
-              </p>
-            </button>
+        <SectionCard title="消息列表">
+          <el-result
+            v-if="loadFailed"
+            icon="warning"
+            title="消息暂时无法加载"
+            sub-title="请稍后刷新重试。"
+          />
 
-            <el-empty v-if="!loading && !messages.length" description="暂无消息" />
-          </div>
+          <template v-else>
+            <div v-loading="loading" class="message-list soft-scrollbar">
+              <button
+                v-for="item in messages"
+                :key="item.recipientId"
+                type="button"
+                class="message-list-item"
+                :class="{ 'is-active': item.recipientId === activeRecipientId }"
+                @click="openMessage(item)"
+              >
+                <div class="message-list-item__head">
+                  <span class="message-list-item__title">{{ item.title || '未命名消息' }}</span>
+                  <span class="message-list-item__time">{{ formatDateTime(item.sendAt || item.recipientCreatedAt) }}</span>
+                </div>
+                <div class="message-list-item__meta">
+                  <span class="small-tag">{{ resolveNoticeType(item.noticeType) }}</span>
+                  <span :class="['small-tag', item.readStatus === 1 ? 'tag-blue' : 'tag-red']">
+                    {{ item.readStatus === 1 ? '已读' : '未读' }}
+                  </span>
+                </div>
+                <p class="message-list-item__snippet">{{ ellipsis(item.content) }}</p>
+              </button>
 
-          <div class="message-pagination">
-            <el-pagination
-              v-model:current-page="pager.pageNum"
-              v-model:page-size="pager.pageSize"
-              background
-              layout="total, prev, pager, next"
-              :total="pager.total"
-              @current-change="fetchInboxList"
-              @size-change="fetchInboxList"
-            />
-          </div>
+              <el-empty v-if="!loading && !messages.length" description="暂无消息" />
+            </div>
+
+            <div class="message-pagination">
+              <el-pagination
+                v-model:current-page="pager.pageNum"
+                v-model:page-size="pager.pageSize"
+                background
+                layout="total, prev, pager, next"
+                :total="pager.total"
+                @current-change="loadMessageList"
+              />
+            </div>
+          </template>
         </SectionCard>
       </div>
 
       <SectionCard title="消息详情" class="message-detail-card">
-        <template v-if="currentMessage">
+        <el-result
+          v-if="loadFailed && !currentMessage"
+          icon="warning"
+          title="消息暂时无法加载"
+          sub-title="请稍后刷新重试。"
+        />
+
+        <template v-else-if="currentMessage">
           <div class="message-detail__header">
             <div>
               <h3 class="message-detail__title">{{ currentMessage.title || '未命名消息' }}</h3>
@@ -126,7 +130,7 @@
                 :loading="detailActionLoading"
                 @click="handleMarkSingleRead"
               >
-                标记已读
+                标为已读
               </el-button>
               <el-button
                 type="danger"
@@ -145,32 +149,28 @@
               <div class="message-info-card__value">{{ formatDateTime(currentMessage.sendAt || currentMessage.recipientCreatedAt) }}</div>
             </article>
             <article class="message-info-card">
+              <div class="message-info-card__label">发送渠道</div>
+              <div class="message-info-card__value">{{ currentMessage.channelType || '站内信' }}</div>
+            </article>
+            <article class="message-info-card">
               <div class="message-info-card__label">业务来源</div>
               <div class="message-info-card__value">{{ currentMessage.bizType || '-' }}</div>
             </article>
             <article class="message-info-card">
-              <div class="message-info-card__label">关联业务ID</div>
+              <div class="message-info-card__label">关联业务 ID</div>
               <div class="message-info-card__value">{{ currentMessage.bizId || '-' }}</div>
-            </article>
-            <article class="message-info-card">
-              <div class="message-info-card__label">过期时间</div>
-              <div class="message-info-card__value">{{ formatDateTime(currentMessage.expireAt) }}</div>
             </article>
           </div>
 
           <div class="message-detail__body">
             <h4>消息正文</h4>
             <div class="message-detail__content">
-              {{ currentMessage.content || '该消息暂无正文内容。' }}
+              {{ currentMessage.content || '暂无正文内容。' }}
             </div>
-          </div>
-
-          <div class="paper-note">
-            若该消息来自达成度预警、自评任务或问卷发布，建议结合业务模块进一步查看来源对象的详情与处理进度。
           </div>
         </template>
 
-        <el-empty v-else description="请选择左侧消息查看详情" />
+        <el-empty v-else description="暂无消息" />
       </SectionCard>
     </div>
   </StandardPage>
@@ -179,14 +179,18 @@
 <script setup>
 import { computed, onMounted, reactive, ref } from 'vue';
 import { ElMessage, ElMessageBox } from 'element-plus';
-import { useRoute, useRouter } from 'vue-router';
 import StandardPage from '../../components/page/StandardPage.vue';
 import SectionCard from '../../components/page/SectionCard.vue';
-import { deleteNoticeRecipient, fetchInbox, fetchUnreadCount, markAllNoticeRead, markNoticeRead } from '../../api/notice';
+import {
+  deleteNoticeRecipient,
+  fetchNoticeMessage,
+  fetchRecipientList,
+  fetchUnreadCount,
+  markAllNoticeRead,
+  markNoticeRead
+} from '../../api/notice';
 import { useUserStore } from '../../store/user';
 
-const router = useRouter();
-const route = useRoute();
 const userStore = useUserStore();
 
 const loading = ref(false);
@@ -194,36 +198,36 @@ const refreshing = ref(false);
 const markingAll = ref(false);
 const deleting = ref(false);
 const detailActionLoading = ref(false);
+const loadFailed = ref(false);
 const messages = ref([]);
 const unreadCount = ref(0);
+const selectedRecipientId = ref(0);
 
 const filters = reactive({
-  title: '',
-  noticeType: '',
   readStatus: null
 });
 
 const pager = reactive({
   pageNum: 1,
-  pageSize: 12,
+  pageSize: 10,
   total: 0
 });
 
-const noticeTypeOptions = [
-  { label: '系统通知', value: 'SYSTEM' },
-  { label: '达成度预警', value: 'ACHIEVEMENT_WARNING' },
-  { label: '问卷提醒', value: 'SURVEY' },
-  { label: '报告任务', value: 'REPORT_TASK' },
-  { label: 'AI 建议', value: 'AI_ASSISTANT' }
-];
+const noticeTypeLabels = {
+  SYSTEM: '系统通知',
+  ACHIEVEMENT_WARNING: '达成度预警',
+  SURVEY: '问卷提醒',
+  REPORT_TASK: '报告任务',
+  AI_ASSISTANT: 'AI 建议'
+};
 
-const activeRecipientId = computed(() => Number(route.query.id || messages.value[0]?.recipientId || 0));
+const activeRecipientId = computed(() => selectedRecipientId.value || messages.value[0]?.recipientId || 0);
 const currentMessage = computed(() =>
   messages.value.find((item) => item.recipientId === activeRecipientId.value) || null
 );
 
 function resolveNoticeType(type) {
-  return noticeTypeOptions.find((item) => item.value === type)?.label || type || '系统通知';
+  return noticeTypeLabels[type] || type || '系统通知';
 }
 
 function formatDateTime(value) {
@@ -242,68 +246,141 @@ function emitUnreadChanged() {
   }));
 }
 
+function getCurrentUserId() {
+  return Number(userStore.userInfo?.id || 0);
+}
+
+function syncSelection() {
+  if (!messages.value.length) {
+    selectedRecipientId.value = 0;
+    return;
+  }
+  const exists = messages.value.some((item) => item.recipientId === selectedRecipientId.value);
+  if (!exists) {
+    selectedRecipientId.value = messages.value[0].recipientId;
+  }
+}
+
+function normalizeMessage(recipient, detail) {
+  return {
+    recipientId: recipient.id,
+    noticeId: recipient.noticeId,
+    readStatus: recipient.readStatus ?? 0,
+    readAt: recipient.readAt,
+    recipientCreatedAt: recipient.createdAt,
+    title: detail?.title || '消息通知',
+    content: detail?.content || '',
+    noticeType: detail?.noticeType || '',
+    channelType: detail?.channelType || '',
+    bizType: detail?.bizType || '',
+    bizId: detail?.bizId || '',
+    sendAt: detail?.sendAt || detail?.createdAt || recipient.createdAt,
+    expireAt: detail?.expireAt || ''
+  };
+}
+
 async function fetchUnread() {
-  const userId = userStore.userInfo.id;
-  if (!userId) return;
-  unreadCount.value = await fetchUnreadCount(userId);
+  const userId = getCurrentUserId();
+  if (!userId) {
+    unreadCount.value = 0;
+    emitUnreadChanged();
+    return;
+  }
+
+  try {
+    const count = await fetchUnreadCount(userId, { skipErrorMessage: true });
+    unreadCount.value = Number(count || 0);
+  } catch {
+    unreadCount.value = 0;
+  }
   emitUnreadChanged();
 }
 
-async function fetchInboxList() {
-  const userId = userStore.userInfo.id;
-  if (!userId) return;
+async function loadMessageList() {
+  const userId = getCurrentUserId();
+  if (!userId) {
+    loadFailed.value = false;
+    messages.value = [];
+    pager.total = 0;
+    syncSelection();
+    return;
+  }
 
   loading.value = true;
   try {
-    const page = await fetchInbox({
+    const page = await fetchRecipientList({
       recipientUserId: userId,
       pageNum: pager.pageNum,
       pageSize: pager.pageSize,
-      readStatus: filters.readStatus,
-      noticeType: filters.noticeType,
-      title: filters.title
+      readStatus: filters.readStatus
+    }, {
+      skipErrorMessage: true
     });
-    messages.value = page.records || [];
-    pager.total = Number(page.total || 0);
 
-    if (messages.value.length && !messages.value.some((item) => item.recipientId === activeRecipientId.value)) {
-      await router.replace({ path: '/messages', query: { id: String(messages.value[0].recipientId) } });
-    }
+    const records = Array.isArray(page?.records) ? page.records : [];
+    const detailList = await Promise.all(records.map(async (recipient) => {
+      if (!recipient.noticeId) {
+        return normalizeMessage(recipient, null);
+      }
+      try {
+        const detail = await fetchNoticeMessage(recipient.noticeId, { skipErrorMessage: true });
+        return normalizeMessage(recipient, detail);
+      } catch {
+        return normalizeMessage(recipient, null);
+      }
+    }));
+
+    loadFailed.value = false;
+    messages.value = detailList;
+    pager.total = Number(page?.total || 0);
+    syncSelection();
+  } catch {
+    loadFailed.value = true;
+    messages.value = [];
+    pager.total = 0;
+    syncSelection();
   } finally {
     loading.value = false;
   }
 }
 
+async function loadPage() {
+  await Promise.allSettled([fetchUnread(), loadMessageList()]);
+}
+
 async function refreshAll() {
   refreshing.value = true;
   try {
-    await Promise.all([fetchUnread(), fetchInboxList()]);
-    ElMessage.success('消息列表已刷新');
+    await loadPage();
+    if (!loadFailed.value) {
+      ElMessage.success('消息列表已刷新');
+    }
   } finally {
     refreshing.value = false;
   }
 }
 
 async function openMessage(item) {
-  await router.replace({ path: '/messages', query: { id: String(item.recipientId) } });
+  selectedRecipientId.value = item.recipientId;
   if (item.readStatus !== 1) {
     await handleMarkSingleRead(item.recipientId, false);
   }
 }
 
-async function handleMarkSingleRead(recipientId = activeRecipientId.value, toast = true) {
+async function handleMarkSingleRead(recipientId = currentMessage.value?.recipientId, toast = true) {
   if (!recipientId) return;
+
   detailActionLoading.value = true;
   try {
     await markNoticeRead(recipientId);
-    messages.value = messages.value.map((item) =>
+    messages.value = messages.value.map((item) => (
       item.recipientId === recipientId
         ? { ...item, readStatus: 1, readAt: new Date().toISOString() }
         : item
-    );
+    ));
     await fetchUnread();
     if (toast) {
-      ElMessage.success('已标记为已读');
+      ElMessage.success('消息已标为已读');
     }
   } finally {
     detailActionLoading.value = false;
@@ -311,13 +388,14 @@ async function handleMarkSingleRead(recipientId = activeRecipientId.value, toast
 }
 
 async function handleMarkAllRead() {
-  const userId = userStore.userInfo.id;
+  const userId = getCurrentUserId();
   if (!userId) return;
+
   markingAll.value = true;
   try {
     await markAllNoticeRead(userId);
-    await Promise.all([fetchUnread(), fetchInboxList()]);
-    ElMessage.success('全部消息已标记为已读');
+    await loadPage();
+    ElMessage.success('全部消息已标为已读');
   } finally {
     markingAll.value = false;
   }
@@ -325,8 +403,9 @@ async function handleMarkAllRead() {
 
 async function handleDeleteCurrent() {
   if (!currentMessage.value?.recipientId) return;
+
   try {
-    await ElMessageBox.confirm('删除后将从当前收件箱移除该消息，是否继续？', '删除确认', {
+    await ElMessageBox.confirm('删除后，这条消息将不再显示。是否继续？', '删除确认', {
       type: 'warning'
     });
   } catch {
@@ -336,23 +415,26 @@ async function handleDeleteCurrent() {
   deleting.value = true;
   try {
     await deleteNoticeRecipient(currentMessage.value.recipientId);
-    await Promise.all([fetchUnread(), fetchInboxList()]);
+    await loadPage();
     ElMessage.success('消息已删除');
   } finally {
     deleting.value = false;
   }
 }
 
-function resetFilters() {
-  filters.title = '';
-  filters.noticeType = '';
-  filters.readStatus = null;
+function handleSearch() {
   pager.pageNum = 1;
-  fetchInboxList();
+  loadMessageList();
 }
 
-onMounted(async () => {
-  await Promise.all([fetchUnread(), fetchInboxList()]);
+function resetFilters() {
+  filters.readStatus = null;
+  pager.pageNum = 1;
+  loadMessageList();
+}
+
+onMounted(() => {
+  loadPage();
 });
 </script>
 
@@ -403,6 +485,7 @@ onMounted(async () => {
   display: flex;
   flex-direction: column;
   gap: 12px;
+  min-height: 220px;
   max-height: 720px;
   overflow: auto;
 }
@@ -546,9 +629,7 @@ onMounted(async () => {
 
 @media (max-width: 860px) {
   .message-detail__header,
-  .message-detail__info-grid,
   .message-list-item__head {
-    grid-template-columns: 1fr;
     flex-direction: column;
   }
 

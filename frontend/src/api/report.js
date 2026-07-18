@@ -1,11 +1,11 @@
 import { del, get, post, put } from './http';
 
-export function fetchReportProjects(params) {
-  return get('/reports/projects', params);
+export function fetchReportProjects(params, cfg = {}) {
+  return get('/reports/projects', params, cfg);
 }
 
-export function fetchReportProjectDetail(id, params) {
-  return get(`/reports/projects/${id}`, params);
+export function fetchReportProjectDetail(id, params, cfg = {}) {
+  return get(`/reports/projects/${id}`, params, cfg);
 }
 
 export function createReportProject(data) {

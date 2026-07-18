@@ -41,6 +41,11 @@ import CourseSelectionView from '../views/pages/CourseSelectionView.vue';
 import CourseAnnouncementsFeedView from '../views/pages/CourseAnnouncementsFeedView.vue';
 import AcademicProgressView from '../views/pages/AcademicProgressView.vue';
 import CourseEvaluateView from '../views/pages/CourseEvaluateView.vue';
+import SystemParamsView from '../views/pages/SystemParamsView.vue';
+import SystemLogsView from '../views/pages/SystemLogsView.vue';
+import DictManageView from '../views/pages/DictManageView.vue';
+import OrgBindingsView from '../views/pages/OrgBindingsView.vue';
+import RoleManageView from '../views/pages/RoleManageView.vue';
 import UserManage from '../views/UserManage.vue';
 
 const appTitle = '工程教育认证智能服务系统';
@@ -53,10 +58,13 @@ const superAndTeacher = [ROLES.SUPER, ROLES.TEACHER];
 
 const pageRoutes = [
   { path: 'dashboard', name: 'dashboard', component: DashboardView, meta: { title: '首页概览', roles: allRoles } },
-  { path: 'users', name: 'users', component: UserManage, meta: { title: '用户管理', roles: superAndTeacher } },
+  { path: 'users', name: 'users', component: UserManage, meta: { title: '用户管理', roles: superOnly } },
   { path: 'organization', name: 'organization', component: OrganizationView, meta: { title: '组织架构', roles: superOnly } },
-  { path: 'params', name: 'params', component: ConfigCrudPageView, props: { pageKey: 'params' }, meta: { title: '系统参数', roles: superOnly } },
-  { path: 'logs', name: 'logs', component: ConfigCrudPageView, props: { pageKey: 'logs' }, meta: { title: '操作日志', roles: superOnly } },
+  { path: 'organization/bindings', name: 'organization-bindings', component: OrgBindingsView, meta: { title: '组织绑定', roles: superOnly } },
+  { path: 'params', name: 'params', component: SystemParamsView, meta: { title: '系统参数', roles: superOnly } },
+  { path: 'dicts', name: 'dicts', component: DictManageView, meta: { title: '数据字典', roles: superOnly } },
+  { path: 'logs', name: 'logs', component: SystemLogsView, meta: { title: '操作日志', roles: superOnly } },
+  { path: 'roles', name: 'roles', component: RoleManageView, meta: { title: '角色与授权', roles: superOnly } },
   { path: 'announcements', name: 'announcements', component: AnnouncementsView, meta: { title: '系统公告管理', roles: superOnly } },
   { path: 'program', name: 'program', component: ConfigCrudPageView, props: { pageKey: 'program' }, meta: { title: '方案管理', roles: superOnly } },
   { path: 'program/goals', name: 'program-goals', component: ProgramGoalsView, meta: { title: '培养目标与毕业要求', roles: superOnly } },
@@ -145,14 +153,17 @@ const accessFallbackMap = {
   '/course-selection-management': { [ROLES.TEACHER]: '/dashboard', [ROLES.STUDENT]: '/course-selection' },
   '/score-audit': { [ROLES.TEACHER]: '/score-input', [ROLES.STUDENT]: '/my-scores' },
   '/announcements': { [ROLES.TEACHER]: '/course-announcements', [ROLES.STUDENT]: '/course-announcements-view' },
-  '/users': { [ROLES.STUDENT]: '/dashboard' }
+  '/users': { [ROLES.TEACHER]: '/dashboard', [ROLES.STUDENT]: '/dashboard' },
+  '/organization/bindings': { [ROLES.TEACHER]: '/dashboard', [ROLES.STUDENT]: '/dashboard' },
+  '/dicts': { [ROLES.TEACHER]: '/dashboard', [ROLES.STUDENT]: '/dashboard' },
+  '/roles': { [ROLES.TEACHER]: '/dashboard', [ROLES.STUDENT]: '/dashboard' }
 };
 
 router.beforeEach(async (to) => {
   const userStore = useUserStore();
 
   if (to.meta.public && to.name === 'login' && userStore.isLoggedIn) {
-    return getRoleHomePath(userStore.userInfo.role);
+    return getRoleHomePath(userStore.userInfo.role, userStore.menuPaths);
   }
 
   if (!to.meta.public && !userStore.isLoggedIn) {
@@ -168,10 +179,16 @@ router.beforeEach(async (to) => {
     }
   }
 
+  const allowPaths = userStore.menuPaths || [];
   const allowRoles = to.meta.roles || [];
   if (allowRoles.length && !allowRoles.includes(userStore.userInfo.role)) {
     ElMessage.warning('您没有权限访问此页面');
-    return accessFallbackMap[to.path]?.[userStore.userInfo.role] || '/dashboard';
+    return accessFallbackMap[to.path]?.[userStore.userInfo.role] || getRoleHomePath(userStore.userInfo.role, allowPaths);
+  }
+
+  if (!to.meta.public && !to.meta.hideInNav && allowPaths.length && !allowPaths.includes(to.path)) {
+    ElMessage.warning('您没有权限访问此页面');
+    return accessFallbackMap[to.path]?.[userStore.userInfo.role] || getRoleHomePath(userStore.userInfo.role, allowPaths);
   }
 
   return true;
@@ -179,7 +196,7 @@ router.beforeEach(async (to) => {
 
 router.afterEach((to) => {
   const userStore = useUserStore();
-  const navItem = resolveNavItem(String(to.query.from || to.path), userStore.userInfo.role);
+  const navItem = resolveNavItem(String(to.query.from || to.path), userStore.userInfo.role, userStore.menuPaths);
   const recordTitle = typeof to.query.title === 'string' ? to.query.title : '';
   const pageTitle = to.name === 'record-workspace'
     ? `${recordTitle || navItem.label} ${to.params.mode === 'edit' ? '编辑' : '详情'}`

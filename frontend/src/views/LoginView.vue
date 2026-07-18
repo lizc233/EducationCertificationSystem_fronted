@@ -112,39 +112,34 @@ import { computed, onMounted, reactive, ref, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { ElMessage } from 'element-plus';
 import { useUserStore } from '../store/user';
-import { DEFAULT_PASSWORD, USER_ROLES, getUserDirectory } from '../data/users';
+import { ROLES, getRoleHomePath } from '../data/navigation';
 
 const route = useRoute();
 const router = useRouter();
 const userStore = useUserStore();
+const DEFAULT_PASSWORD = '123456';
 
 const formRef = ref();
 const loading = ref(false);
 const captchaCode = ref(generateCaptchaCode());
 
-const presetUsers = getUserDirectory();
-
-function findPresetAccount(role) {
-  return presetUsers.find((item) => item.role === role)?.accountId || '';
-}
-
 const rolePresets = [
   {
-    value: USER_ROLES.ADMIN,
+    value: ROLES.SUPER,
     label: '管理员',
-    account: findPresetAccount(USER_ROLES.ADMIN),
+    account: 'A2026001',
     desc: '工号 / 手机号 / 邮箱'
   },
   {
-    value: USER_ROLES.TEACHER,
+    value: ROLES.TEACHER,
     label: '老师',
-    account: findPresetAccount(USER_ROLES.TEACHER),
+    account: 'T2026001',
     desc: '工号 / 手机号 / 邮箱'
   },
   {
-    value: USER_ROLES.STUDENT,
+    value: ROLES.STUDENT,
     label: '学生',
-    account: findPresetAccount(USER_ROLES.STUDENT),
+    account: 'S2026001',
     desc: '学号 / 手机号 / 邮箱'
   }
 ];
@@ -237,7 +232,7 @@ async function submit() {
   try {
     await userStore.login(form.account, form.password, form.captcha);
     ElMessage.success('登录成功');
-    await router.push('/dashboard');
+    await router.push(getRoleHomePath(userStore.userInfo.role, userStore.menuPaths));
   } catch (error) {
     ElMessage.error(error?.message || '登录失败');
     refreshCaptcha();
