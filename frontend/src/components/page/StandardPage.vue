@@ -79,11 +79,16 @@ const breadcrumbItems = computed(() => {
     return props.breadcrumbs;
   }
 
-  return buildBreadcrumbs(String(route.query.from || route.path), props.title ? [props.title] : [], currentRole.value);
+  return buildBreadcrumbs(
+    String(route.query.from || route.path),
+    props.title ? [props.title] : [],
+    currentRole.value,
+    userStore.menuPaths
+  );
 });
 
 const moduleTheme = computed(() => {
-  const group = resolveNavGroup(String(route.query.from || route.path), currentRole.value);
+  const group = resolveNavGroup(String(route.query.from || route.path), currentRole.value, userStore.menuPaths);
   return MODULE_THEME_MAP[group.label] || MODULE_THEME_MAP.工作台;
 });
 </script>

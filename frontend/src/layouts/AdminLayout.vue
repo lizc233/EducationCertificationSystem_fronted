@@ -155,10 +155,10 @@ const footerRef = ref();
 const chromeHeight = ref(0);
 
 const currentRole = computed(() => userStore.userInfo.role || ROLES.SUPER);
-const resolvedNavPath = computed(() => resolveNavPath(String(route.query.from || route.path), currentRole.value));
-const visibleGroups = computed(() => getVisibleNavGroups(currentRole.value));
-const currentNav = computed(() => resolveNavItem(resolvedNavPath.value, currentRole.value));
-const currentGroupMeta = computed(() => resolveNavGroup(resolvedNavPath.value, currentRole.value));
+const resolvedNavPath = computed(() => resolveNavPath(String(route.query.from || route.path), currentRole.value, userStore.menuPaths));
+const visibleGroups = computed(() => getVisibleNavGroups(currentRole.value, userStore.menuPaths));
+const currentNav = computed(() => resolveNavItem(resolvedNavPath.value, currentRole.value, userStore.menuPaths));
+const currentGroupMeta = computed(() => resolveNavGroup(resolvedNavPath.value, currentRole.value, userStore.menuPaths));
 const currentGroup = computed(() => {
   return visibleGroups.value.find((group) => group.label === currentGroupMeta.value.label)
     || visibleGroups.value.find((group) => group.items.some((item) => item.path === resolvedNavPath.value))
@@ -247,7 +247,7 @@ function goSearch() {
     return;
   }
 
-  const hit = getSearchableNavItems(currentRole.value).find((item) => {
+  const hit = getSearchableNavItems(currentRole.value, userStore.menuPaths).find((item) => {
     return item.label.includes(keyword) || item.summary.includes(keyword) || item.groupLabel.includes(keyword);
   });
 

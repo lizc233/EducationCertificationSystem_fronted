@@ -8,7 +8,7 @@ const allRoles = [ROLES.SUPER, ROLES.TEACHER, ROLES.STUDENT];
 const adminRoles = [ROLES.SUPER];
 const teacherRoles = [ROLES.TEACHER];
 const studentRoles = [ROLES.STUDENT];
-const userManagementRoles = [ROLES.SUPER, ROLES.TEACHER];
+const userManagementRoles = [ROLES.SUPER];
 
 export const navGroups = [
   {
@@ -64,8 +64,11 @@ export const navGroups = [
     label: '基础管理',
     items: [
       { key: 'organization', path: '/organization', label: '组织架构', summary: '维护学校、学院、专业和班级组织关系。', roles: adminRoles },
+      { key: 'organization-bindings', path: '/organization/bindings', label: '组织绑定', summary: '维护教师、学生与组织档案的绑定关系。', roles: adminRoles },
       { key: 'params', path: '/params', label: '系统参数', summary: '维护基础参数、认证阈值与系统配置。', roles: adminRoles },
+      { key: 'dicts', path: '/dicts', label: '数据字典', summary: '维护字典类型、字典项与业务表单选项。', roles: adminRoles },
       { key: 'logs', path: '/logs', label: '操作日志', summary: '查询登录记录、业务操作和导出历史。', roles: adminRoles },
+      { key: 'roles', path: '/roles', label: '角色与授权', summary: '维护角色信息、数据范围和菜单授权。', roles: adminRoles },
       { key: 'announcements', path: '/announcements', label: '系统公告管理', summary: '发布面向全体用户的系统公告和通知。', roles: adminRoles }
     ]
   },
@@ -180,24 +183,38 @@ export const navs = navGroups.flatMap((group) =>
   }))
 );
 
-function filterGroupsByRole(role = '') {
+function hasAccess(item, role = '', accessPaths = []) {
+  const fallbackRole = role || ROLES.SUPER;
+  if (!item.roles.includes(fallbackRole)) {
+    return false;
+  }
+  if (!Array.isArray(accessPaths) || !accessPaths.length) {
+    return true;
+  }
+  return !item.path || accessPaths.includes(item.path);
+}
+
+function filterGroupsByRole(role = '', accessPaths = []) {
   const fallbackRole = role || ROLES.SUPER;
   return navGroups
     .map((group) => ({
       ...group,
-      items: group.items.filter((item) => item.roles.includes(fallbackRole))
+      items: group.items.filter((item) => hasAccess(item, fallbackRole, accessPaths))
     }))
     .filter((group) => group.items.length);
 }
 
-function getCandidateNavs(role = '') {
+function getCandidateNavs(role = '', accessPaths = []) {
   const fallbackRole = role || ROLES.SUPER;
-  const filtered = navs.filter((item) => item.roles.includes(fallbackRole));
-  return filtered.length ? filtered : navs;
+  const filtered = navs.filter((item) => hasAccess(item, fallbackRole, accessPaths));
+  if (filtered.length) {
+    return filtered;
+  }
+  return Array.isArray(accessPaths) && accessPaths.length ? [] : navs;
 }
 
-export function getVisibleNavGroups(role = '') {
-  return filterGroupsByRole(role)
+export function getVisibleNavGroups(role = '', accessPaths = []) {
+  return filterGroupsByRole(role, accessPaths)
     .map((group) => ({
       ...group,
       items: group.items.filter((item) => item.showInNav !== false),
@@ -206,36 +223,36 @@ export function getVisibleNavGroups(role = '') {
     .filter((group) => group.items.length);
 }
 
-export function getSearchableNavItems(role = '') {
-  return getCandidateNavs(role);
+export function getSearchableNavItems(role = '', accessPaths = []) {
+  return getCandidateNavs(role, accessPaths);
 }
 
-export function resolveNavPath(path = '', role = '') {
+export function resolveNavPath(path = '', role = '', accessPaths = []) {
   if (!path) {
     return '/dashboard';
   }
 
-  const matched = [...getCandidateNavs(role)]
+  const matched = [...getCandidateNavs(role, accessPaths)]
     .sort((left, right) => right.path.length - left.path.length)
     .find((item) => path === item.path || path.startsWith(`${item.path}/`));
 
   return matched?.path || '/dashboard';
 }
 
-export function resolveNavItem(path = '', role = '') {
-  const resolvedPath = resolveNavPath(path, role);
-  return getCandidateNavs(role).find((item) => item.path === resolvedPath) || navs[0];
+export function resolveNavItem(path = '', role = '', accessPaths = []) {
+  const resolvedPath = resolveNavPath(path, role, accessPaths);
+  return getCandidateNavs(role, accessPaths).find((item) => item.path === resolvedPath) || navs[0];
 }
 
-export function resolveNavGroup(path = '', role = '') {
-  const resolvedPath = resolveNavPath(path, role);
-  const groups = filterGroupsByRole(role);
+export function resolveNavGroup(path = '', role = '', accessPaths = []) {
+  const resolvedPath = resolveNavPath(path, role, accessPaths);
+  const groups = filterGroupsByRole(role, accessPaths);
   return groups.find((group) => group.items.some((item) => item.path === resolvedPath)) || groups[0] || navGroups[0];
 }
 
-export function buildBreadcrumbs(path = '', extraItems = [], role = '') {
-  const navItem = resolveNavItem(path, role);
-  const navGroup = resolveNavGroup(path, role);
+export function buildBreadcrumbs(path = '', extraItems = [], role = '', accessPaths = []) {
+  const navItem = resolveNavItem(path, role, accessPaths);
+  const navGroup = resolveNavGroup(path, role, accessPaths);
   const base = navItem.path === '/dashboard'
     ? ['首页', '首页概览']
     : ['首页', navGroup.label, navItem.label];
@@ -243,10 +260,10 @@ export function buildBreadcrumbs(path = '', extraItems = [], role = '') {
   return [...base, ...extraItems.filter(Boolean)];
 }
 
-export function getRoleHomePath(role = '') {
-  return getVisibleNavGroups(role)[0]?.defaultPath || '/dashboard';
+export function getRoleHomePath(role = '', accessPaths = []) {
+  return getVisibleNavGroups(role, accessPaths)[0]?.defaultPath || '/dashboard';
 }
 
-export function canSee(role) {
-  return navs.filter((item) => item.roles.includes(role));
+export function canSee(role, accessPaths = []) {
+  return navs.filter((item) => hasAccess(item, role, accessPaths));
 }
