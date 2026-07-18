@@ -9,11 +9,15 @@ import NotFound from '../views/error/NotFound.vue';
 import AdminLayout from '../layouts/AdminLayout.vue';
 import ConfigCrudPageView from '../views/pages/ConfigCrudPageView.vue';
 import OrganizationView from '../views/pages/OrganizationView.vue';
+import ProgramVersionsView from '../views/pages/ProgramVersionsView.vue';
 import ProgramGoalsView from '../views/pages/ProgramGoalsView.vue';
 import ProgramCoursesView from '../views/pages/ProgramCoursesView.vue';
+import CourseLibraryView from '../views/pages/CourseLibraryView.vue';
 import CourseGoalsView from '../views/pages/CourseGoalsView.vue';
 import CourseTeachingView from '../views/pages/CourseTeachingView.vue';
+import TeachingTasksView from '../views/pages/TeachingTasksView.vue';
 import CourseResourcesView from '../views/pages/CourseResourcesView.vue';
+import EvidenceMaterialsView from '../views/pages/EvidenceMaterialsView.vue';
 import EvaluationScoresView from '../views/pages/EvaluationScoresView.vue';
 import MessagesView from '../views/pages/MessagesView.vue';
 import AchievementModelView from '../views/pages/AchievementModelView.vue';
@@ -110,6 +114,29 @@ const pageRoutes = [
     meta: { title: '业务记录', roles: allRoles, hideInNav: true }
   }
 ];
+
+for (const route of pageRoutes) {
+  switch (route.name) {
+    case 'program':
+      route.component = ProgramVersionsView;
+      delete route.props;
+      break;
+    case 'courses':
+      route.component = CourseLibraryView;
+      delete route.props;
+      break;
+    case 'teaching':
+      route.component = TeachingTasksView;
+      delete route.props;
+      break;
+    case 'evaluation-materials':
+      route.component = EvidenceMaterialsView;
+      delete route.props;
+      break;
+    default:
+      break;
+  }
+}
 
 const routes = [
   {
