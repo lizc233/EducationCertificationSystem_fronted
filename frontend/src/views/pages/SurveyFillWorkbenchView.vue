@@ -18,7 +18,7 @@
       <article class="fill-kpi">
         <span>已提交</span>
         <strong>{{ submittedCount }}</strong>
-        <small>本地演示数据中的个人提交份数</small>
+        <small>当前账号已完成提交的问卷数量</small>
       </article>
       <article class="fill-kpi">
         <span>待完成</span>
@@ -58,7 +58,7 @@
 
             <SectionCard title="答卷区">
               <template #extra>
-                <el-button type="primary" :disabled="!selectedSurvey || selectedEntry?.alreadySubmitted" @click="submitSurvey">
+                <el-button type="primary" :disabled="!selectedSurvey || selectedSubmitBlocked" @click="submitSurvey">
                   {{ selectedEntry?.alreadySubmitted ? '已完成提交' : '提交答卷' }}
                 </el-button>
               </template>
@@ -85,12 +85,12 @@
                     <el-radio-group
                       v-if="['single', 'rating'].includes(question.type)"
                       v-model="answerState[question.id].singleValue"
-                      :disabled="selectedEntry?.alreadySubmitted"
+                      :disabled="selectedSubmitBlocked"
                     >
                       <el-radio
                         v-for="option in question.options"
                         :key="option.id"
-                        :label="option.value"
+                        :value="option.value"
                       >
                         {{ option.label }}
                       </el-radio>
@@ -99,7 +99,7 @@
                     <el-checkbox-group
                       v-else-if="question.type === 'multiple'"
                       v-model="answerState[question.id].multiValues"
-                      :disabled="selectedEntry?.alreadySubmitted"
+                      :disabled="selectedSubmitBlocked"
                     >
                       <el-checkbox
                         v-for="option in question.options"
@@ -115,7 +115,7 @@
                       v-model="answerState[question.id].text"
                       type="textarea"
                       :rows="4"
-                      :disabled="selectedEntry?.alreadySubmitted"
+                      :disabled="selectedSubmitBlocked"
                       :placeholder="question.placeholder || '请输入你的回答'"
                     />
 
@@ -124,12 +124,12 @@
                         <div class="matrix-answer__label">{{ row.label }}</div>
                         <el-radio-group
                           v-model="answerState[question.id].matrix[row.id]"
-                          :disabled="selectedEntry?.alreadySubmitted"
+                          :disabled="selectedSubmitBlocked"
                         >
                           <el-radio
                             v-for="column in question.columns"
                             :key="column.id"
-                            :label="column.value"
+                            :value="column.value"
                           >
                             {{ column.label }}
                           </el-radio>
@@ -294,283 +294,45 @@
 </template>
 
 <script setup>
-import { computed, reactive, ref } from 'vue';
-import { ElMessage } from 'element-plus';
 import StandardPage from '../../components/page/StandardPage.vue';
 import SectionCard from '../../components/page/SectionCard.vue';
-import { ROLES } from '../../data/navigation';
-import {
-  AUDIENCE_OPTIONS,
-  PUBLISH_STATUS_OPTIONS,
-  QUESTION_TYPE_OPTIONS,
-  SURVEY_TYPE_OPTIONS,
-  buildQuestionStats,
-  buildSurveyOverview,
-  exportSurveyResponsesCsv,
-  formatDateTime,
-  getSurveyById,
-  getSurveyResponseDetail,
-  listAccessibleSurveys,
-  listSurveyResponses,
-  listSurveys,
-  submitSurveyResponse
-} from '../../data/surveyWorkbench';
-import { ROLE_LABEL_MAP, useUserStore } from '../../store/user';
+import { useSurveyFillWorkbench } from './SurveyFillWorkbench.logic';
 
-const userStore = useUserStore();
-
-const activeTab = ref(userStore.userInfo.role === ROLES.SUPER ? 'stats' : 'fill');
-const surveyCards = ref([]);
-const selectedSurveyId = ref('');
-const selectedSurvey = ref(null);
-const answerState = reactive({});
-
-const statsSurveyId = ref('');
-const statsOverview = reactive({
-  targetCount: 0,
-  submittedCount: 0,
-  pendingCount: 0,
-  recoveryRate: 0
-});
-const questionStats = ref([]);
-const responseRows = ref([]);
-const detailVisible = ref(false);
-const responseDetail = ref(null);
-
-const isAdmin = computed(() => userStore.userInfo.role === ROLES.SUPER);
-const publishedSurveys = computed(() => listSurveys().filter((item) => item.status === 'PUBLISHED'));
-const selectedEntry = computed(() => surveyCards.value.find((item) => item.id === selectedSurveyId.value) || null);
-const roleLabel = computed(() => ROLE_LABEL_MAP[userStore.userInfo.role] || '未分配角色');
-
-const pageTitle = computed(() => (isAdmin.value ? '问卷填报与统计' : '问卷填写'));
-
-const breadcrumbs = computed(() => {
-  if (userStore.userInfo.role === ROLES.TEACHER) {
-    return ['首页', '问卷与改进', '问卷填写'];
-  }
-  if (userStore.userInfo.role === ROLES.STUDENT) {
-    return ['首页', '问卷填写', '在线答卷'];
-  }
-  return ['首页', '问卷与改进', '问卷填报与统计'];
-});
-
-const pageDescription = computed(() => {
-  if (userStore.userInfo.role === ROLES.TEACHER) {
-    return '教师只看到面向教师发布的问卷，并可在本地工作台中完成填写与查看提交状态。';
-  }
-  if (userStore.userInfo.role === ROLES.STUDENT) {
-    return '学生端突出待填问卷、填写进度和提交确认，保持与管理员设计端一致的题型展示。';
-  }
-  return '管理员在这一页模拟填写视角，并查看回收率、逐题统计与答卷明细。';
-});
-
-const submittedCount = computed(() => surveyCards.value.filter((item) => item.alreadySubmitted).length);
-const pendingCount = computed(() => Math.max(surveyCards.value.length - submittedCount.value, 0));
-
-const answeredCount = computed(() => {
-  if (!selectedSurvey.value) {
-    return 0;
-  }
-  return selectedSurvey.value.questions.filter((question) => {
-    const current = answerState[question.id];
-    if (!current) {
-      return false;
-    }
-    if (question.type === 'text') {
-      return Boolean((current.text || '').trim());
-    }
-    if (question.type === 'matrix') {
-      return Object.keys(current.matrix || {}).length > 0;
-    }
-    if (question.type === 'multiple') {
-      return (current.multiValues || []).length > 0;
-    }
-    return Boolean(current.singleValue);
-  }).length;
-});
-
-const completionRate = computed(() => {
-  if (!selectedSurvey.value?.questions.length) {
-    return 0;
-  }
-  return Number(((answeredCount.value / selectedSurvey.value.questions.length) * 100).toFixed(0));
-});
-
-function questionTypeLabel(type) {
-  return QUESTION_TYPE_OPTIONS.find((item) => item.value === type)?.label || type;
-}
-
-function typeLabel(type) {
-  return SURVEY_TYPE_OPTIONS.find((item) => item.value === type)?.label || type;
-}
-
-function audienceLabel(role) {
-  return AUDIENCE_OPTIONS.find((item) => item.value === role)?.label || role;
-}
-
-function ensureAnswerState(question) {
-  if (!answerState[question.id]) {
-    answerState[question.id] = {
-      singleValue: '',
-      multiValues: [],
-      text: '',
-      matrix: {}
-    };
-  }
-}
-
-function fillExistingResponse(survey) {
-  const currentEntry = surveyCards.value.find((item) => item.id === survey.id);
-  if (!currentEntry?.responseId) {
-    return;
-  }
-  const detail = getSurveyResponseDetail(survey.id, currentEntry.responseId);
-  (detail?.answers || []).forEach((answer) => {
-    const target = answerState[answer.questionId];
-    const rawAnswer = getSurveyById(survey.id)?.responses?.find((item) => item.id === currentEntry.responseId)?.answers?.find((item) => item.questionId === answer.questionId);
-    if (!target || !rawAnswer) {
-      return;
-    }
-    target.singleValue = rawAnswer.values?.[0] || '';
-    target.multiValues = rawAnswer.values || [];
-    target.text = rawAnswer.text || '';
-    target.matrix = rawAnswer.matrix || {};
-  });
-}
-
-function loadSurveyCards() {
-  surveyCards.value = listAccessibleSurveys(userStore.userInfo.role, userStore.userInfo);
-  if (!surveyCards.value.length) {
-    selectedSurveyId.value = '';
-    selectedSurvey.value = null;
-    return;
-  }
-  const preferred = selectedSurveyId.value || surveyCards.value.find((item) => !item.alreadySubmitted)?.id || surveyCards.value[0].id;
-  selectSurvey(preferred);
-}
-
-function selectSurvey(id) {
-  selectedSurveyId.value = id;
-  const survey = getSurveyById(id);
-  selectedSurvey.value = survey;
-  (survey?.questions || []).forEach((question) => {
-    answerState[question.id] = {
-      singleValue: '',
-      multiValues: [],
-      text: '',
-      matrix: {}
-    };
-    ensureAnswerState(question);
-  });
-  fillExistingResponse(survey);
-}
-
-function buildAnswerPayload() {
-  return (selectedSurvey.value?.questions || []).map((question) => {
-    const current = answerState[question.id];
-    if (question.type === 'text') {
-      return { questionId: question.id, text: current.text || '' };
-    }
-    if (question.type === 'matrix') {
-      return { questionId: question.id, matrix: { ...(current.matrix || {}) } };
-    }
-    if (question.type === 'multiple') {
-      return { questionId: question.id, values: [...(current.multiValues || [])] };
-    }
-    return { questionId: question.id, values: current.singleValue ? [current.singleValue] : [] };
-  });
-}
-
-function validateBeforeSubmit() {
-  for (const question of selectedSurvey.value?.questions || []) {
-    if (!question.required) {
-      continue;
-    }
-    const current = answerState[question.id];
-    if (question.type === 'text' && !(current.text || '').trim()) {
-      ElMessage.warning(`请完成第 ${question.sortNo} 题`);
-      return false;
-    }
-    if (question.type === 'matrix' && Object.keys(current.matrix || {}).length === 0) {
-      ElMessage.warning(`请完成第 ${question.sortNo} 题`);
-      return false;
-    }
-    if (question.type === 'multiple' && !(current.multiValues || []).length) {
-      ElMessage.warning(`请完成第 ${question.sortNo} 题`);
-      return false;
-    }
-    if (['single', 'rating'].includes(question.type) && !current.singleValue) {
-      ElMessage.warning(`请完成第 ${question.sortNo} 题`);
-      return false;
-    }
-  }
-  return true;
-}
-
-function submitSurvey() {
-  if (!selectedSurvey.value || selectedEntry.value?.alreadySubmitted) {
-    return;
-  }
-  if (!validateBeforeSubmit()) {
-    return;
-  }
-  submitSurveyResponse(selectedSurvey.value.id, userStore.userInfo, buildAnswerPayload());
-  ElMessage.success('答卷已提交，页面统计已同步更新');
-  loadSurveyCards();
-  if (statsSurveyId.value === selectedSurvey.value.id) {
-    loadStats();
-  }
-}
-
-function loadStats() {
-  if (!statsSurveyId.value) {
-    return;
-  }
-  const overview = buildSurveyOverview(statsSurveyId.value);
-  Object.assign(statsOverview, overview || {
-    targetCount: 0,
-    submittedCount: 0,
-    pendingCount: 0,
-    recoveryRate: 0
-  });
-  questionStats.value = buildQuestionStats(statsSurveyId.value);
-  responseRows.value = listSurveyResponses(statsSurveyId.value);
-}
-
-function openResponseDetail(responseId) {
-  responseDetail.value = getSurveyResponseDetail(statsSurveyId.value, responseId);
-  detailVisible.value = true;
-}
-
-function formatAnswer(answer) {
-  if (answer.answerText) {
-    return answer.answerText;
-  }
-  if (answer.selectedOptionTexts?.length) {
-    return answer.selectedOptionTexts.join(' / ');
-  }
-  if (answer.matrixAnswers?.length) {
-    return answer.matrixAnswers.map((item) => `${item.rowText}: ${item.columnText}`).join(' / ');
-  }
-  return '-';
-}
-
-function downloadCsv() {
-  const blob = exportSurveyResponsesCsv(statsSurveyId.value);
-  if (!blob) {
-    return;
-  }
-  const url = window.URL.createObjectURL(blob);
-  const anchor = document.createElement('a');
-  anchor.href = url;
-  anchor.download = `survey-${statsSurveyId.value}.csv`;
-  anchor.click();
-  window.URL.revokeObjectURL(url);
-}
-
-loadSurveyCards();
-statsSurveyId.value = publishedSurveys.value[0]?.id || '';
-loadStats();
+const {
+  activeTab,
+  surveyCards,
+  selectedSurveyId,
+  selectedSurvey,
+  answerState,
+  statsSurveyId,
+  statsOverview,
+  questionStats,
+  responseRows,
+  detailVisible,
+  responseDetail,
+  isAdmin,
+  publishedSurveys,
+  selectedEntry,
+  selectedSubmitBlocked,
+  roleLabel,
+  pageTitle,
+  breadcrumbs,
+  pageDescription,
+  submittedCount,
+  pendingCount,
+  answeredCount,
+  completionRate,
+  questionTypeLabel,
+  typeLabel,
+  audienceLabel,
+  selectSurvey,
+  submitSurvey,
+  loadStats,
+  openResponseDetail,
+  formatAnswer,
+  downloadCsv,
+  formatDateTime
+} = useSurveyFillWorkbench();
 </script>
 
 <style scoped>

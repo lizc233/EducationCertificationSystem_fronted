@@ -1,4 +1,4 @@
-import { del, get, post, put } from './http';
+import { del, download, get, post, put } from './http';
 
 export function fetchReportProjects(params, cfg = {}) {
   return get('/reports/projects', params, cfg);
@@ -66,4 +66,8 @@ export function previewMergedReport(projectId) {
 
 export function buildMergedReportDownloadUrl(projectId) {
   return `${import.meta.env.VITE_API_BASE_URL || '/api'}/reports/projects/${projectId}/download/merged`;
+}
+
+export function downloadMergedReport(projectId, fileName = `report_project_${projectId}.md`) {
+  return download(`/reports/projects/${projectId}/download/merged`, {}, fileName);
 }

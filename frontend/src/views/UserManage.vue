@@ -439,6 +439,17 @@ function createDialogForm() {
   };
 }
 
+function buildDefaultRoleOptions() {
+  return ROLE_ORDER.map((value) => ({
+    label: ROLE_LABEL_MAP[value] || value,
+    value
+  }));
+}
+
+function isMissingEndpoint(error) {
+  return error?.response?.status === 404;
+}
+
 function formatDateTime(value) {
   if (!value) {
     return '-';
@@ -480,44 +491,78 @@ function buildQueryParams(override = {}) {
 }
 
 async function initializePage() {
-  await fetchRoleOptions();
-  await Promise.all([loadSnapshot(), loadTable()]);
+  try {
+    await fetchRoleOptions();
+    await Promise.all([loadSnapshot(), loadTable()]);
+  } catch (error) {
+    if (!isMissingEndpoint(error)) {
+      throw error;
+    }
+    roleOptions.value = buildDefaultRoleOptions();
+    snapshotRecords.value = [];
+    tableData.value = [];
+    pagination.total = 0;
+  }
 }
 
 async function fetchRoleOptions() {
-  const rows = await request.get('/user/roles');
-  roleOptions.value = rows
-    .map((item) => ({
-      label: ROLE_LABEL_MAP[item.roleCode] || item.roleName || item.roleCode || item.code || item.name,
-      value: item.roleCode || item.code || ''
-    }))
-    .filter((item) => item.value)
-    .sort((left, right) => {
-      const leftIndex = ROLE_ORDER.indexOf(left.value);
-      const rightIndex = ROLE_ORDER.indexOf(right.value);
-      return (leftIndex === -1 ? Number.MAX_SAFE_INTEGER : leftIndex)
-        - (rightIndex === -1 ? Number.MAX_SAFE_INTEGER : rightIndex);
+  try {
+    const rows = await request.get('/user/roles', {
+      skipErrorMessage: true
     });
+    roleOptions.value = rows
+      .map((item) => ({
+        label: ROLE_LABEL_MAP[item.roleCode] || item.roleName || item.roleCode || item.code || item.name,
+        value: item.roleCode || item.code || ''
+      }))
+      .filter((item) => item.value)
+      .sort((left, right) => {
+        const leftIndex = ROLE_ORDER.indexOf(left.value);
+        const rightIndex = ROLE_ORDER.indexOf(right.value);
+        return (leftIndex === -1 ? Number.MAX_SAFE_INTEGER : leftIndex)
+          - (rightIndex === -1 ? Number.MAX_SAFE_INTEGER : rightIndex);
+      });
+  } catch (error) {
+    if (!isMissingEndpoint(error)) {
+      throw error;
+    }
+    roleOptions.value = buildDefaultRoleOptions();
+  }
 }
 
 async function loadSnapshot() {
-  const page = await request.get('/user/list', {
-    params: {
-      pageNum: 1,
-      pageSize: 500
+  try {
+    const page = await request.get('/user/list', {
+      params: {
+        pageNum: 1,
+        pageSize: 500
+      },
+      skipErrorMessage: true
+    });
+    snapshotRecords.value = page.records || [];
+  } catch (error) {
+    if (!isMissingEndpoint(error)) {
+      throw error;
     }
-  });
-  snapshotRecords.value = page.records || [];
+    snapshotRecords.value = [];
+  }
 }
 
 async function loadTable() {
   loading.value = true;
   try {
     const page = await request.get('/user/list', {
-      params: buildQueryParams()
+      params: buildQueryParams(),
+      skipErrorMessage: true
     });
     tableData.value = page.records || [];
     pagination.total = page.total || 0;
+  } catch (error) {
+    if (!isMissingEndpoint(error)) {
+      throw error;
+    }
+    tableData.value = [];
+    pagination.total = 0;
   } finally {
     loading.value = false;
   }

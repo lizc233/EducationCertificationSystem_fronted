@@ -156,20 +156,133 @@
               <el-empty v-else description="暂无进度记录" />
             </SectionCard>
           </div>
+
+          <SectionCard title="成员分工" style="margin-top: 20px;">
+            <template #extra>
+              <el-button
+                v-if="canEditAssignments"
+                type="primary"
+                :disabled="!projectDetail?.id"
+                @click="openAssignmentDialog"
+              >
+                编辑分工
+              </el-button>
+            </template>
+
+            <el-table v-if="assignmentRows.length" :data="assignmentRows" border stripe>
+              <el-table-column prop="chapterLabel" label="章节" min-width="220" />
+              <el-table-column label="成员" min-width="140">
+                <template #default="{ row }">
+                  {{ row.assigneeUserName || row.assigneeUserId || '-' }}
+                </template>
+              </el-table-column>
+              <el-table-column label="分工角色" min-width="120">
+                <template #default="{ row }">
+                  {{ row.roleType || '-' }}
+                </template>
+              </el-table-column>
+              <el-table-column label="状态" min-width="120">
+                <template #default="{ row }">
+                  <el-tag :type="assignmentStatusType(row.assignmentStatus)">
+                    {{ assignmentStatusLabel(row.assignmentStatus) }}
+                  </el-tag>
+                </template>
+              </el-table-column>
+              <el-table-column prop="dueDate" label="截止日期" min-width="120" />
+              <el-table-column prop="remark" label="备注" min-width="180" show-overflow-tooltip />
+            </el-table>
+            <el-empty v-else description="暂无成员分工" />
+          </SectionCard>
         </template>
 
         <el-empty v-else description="暂无报告项目" />
       </SectionCard>
     </div>
+
+    <el-dialog v-model="assignmentVisible" title="编辑成员分工" width="980px">
+      <div class="assignment-toolbar">
+        <el-button type="primary" @click="appendAssignmentRow">新增分工</el-button>
+      </div>
+
+      <el-table :data="assignmentFormRows" border stripe>
+        <el-table-column label="章节" min-width="220">
+          <template #default="{ row }">
+            <el-select v-model="row.chapterId" placeholder="选择章节" style="width: 100%;">
+              <el-option
+                v-for="item in chapterOptions"
+                :key="item.id"
+                :label="item.label"
+                :value="item.id"
+              />
+            </el-select>
+          </template>
+        </el-table-column>
+        <el-table-column label="成员" min-width="160">
+          <template #default="{ row }">
+            <el-select v-model="row.assigneeUserId" placeholder="选择成员" filterable style="width: 100%;">
+              <el-option
+                v-for="item in teacherOptions"
+                :key="item.value"
+                :label="item.label"
+                :value="item.value"
+              />
+            </el-select>
+          </template>
+        </el-table-column>
+        <el-table-column label="分工角色" min-width="140">
+          <template #default="{ row }">
+            <el-input v-model.trim="row.roleType" placeholder="如：D成员 / E成员" />
+          </template>
+        </el-table-column>
+        <el-table-column label="状态" min-width="140">
+          <template #default="{ row }">
+            <el-select v-model="row.assignmentStatus" style="width: 100%;">
+              <el-option
+                v-for="item in assignmentStatusOptions"
+                :key="item.value"
+                :label="item.label"
+                :value="item.value"
+              />
+            </el-select>
+          </template>
+        </el-table-column>
+        <el-table-column label="截止日期" min-width="140">
+          <template #default="{ row }">
+            <el-date-picker
+              v-model="row.dueDate"
+              type="date"
+              value-format="YYYY-MM-DD"
+              style="width: 100%;"
+            />
+          </template>
+        </el-table-column>
+        <el-table-column label="备注" min-width="180">
+          <template #default="{ row }">
+            <el-input v-model.trim="row.remark" />
+          </template>
+        </el-table-column>
+        <el-table-column label="操作" width="90" fixed="right">
+          <template #default="{ $index }">
+            <el-button type="danger" link @click="removeAssignmentRow($index)">删除</el-button>
+          </template>
+        </el-table-column>
+      </el-table>
+
+      <template #footer>
+        <el-button @click="assignmentVisible = false">取消</el-button>
+        <el-button type="primary" :loading="assignmentSaving" @click="saveAssignments">保存</el-button>
+      </template>
+    </el-dialog>
   </StandardPage>
 </template>
 
 <script setup>
 import { computed, onMounted, reactive, ref } from 'vue';
+import { ElMessage } from 'element-plus';
 import StandardPage from '../../components/page/StandardPage.vue';
 import SectionCard from '../../components/page/SectionCard.vue';
-import { fetchSemesters } from '../../api/lookups';
-import { fetchReportProjectDetail, fetchReportProjects } from '../../api/report';
+import { fetchSemesters, fetchTeachers } from '../../api/lookups';
+import { fetchReportProjectDetail, fetchReportProjects, saveReportAssignments } from '../../api/report';
 import { useUserStore } from '../../store/user';
 
 const userStore = useUserStore();
@@ -182,9 +295,13 @@ const loading = reactive({
 const loadFailed = ref(false);
 const detailFailed = ref(false);
 const semesterOptions = ref([]);
+const teacherOptions = ref([]);
 const projects = ref([]);
 const selectedProjectId = ref(null);
 const projectDetail = ref(null);
+const assignmentVisible = ref(false);
+const assignmentSaving = ref(false);
+const assignmentFormRows = ref([]);
 
 const filters = reactive({
   status: '',
@@ -198,8 +315,17 @@ const pager = reactive({
   total: 0
 });
 
+const assignmentStatusOptions = [
+  { label: '待开始', value: 'PENDING' },
+  { label: '进行中', value: 'IN_PROGRESS' },
+  { label: '已完成', value: 'COMPLETED' }
+];
+
+const canEditAssignments = computed(() => userStore.userInfo.role === 'ROLE_SUPER');
 const chapterTree = computed(() => mapChapterTree(projectDetail.value?.chapters || []));
 const latestLogs = computed(() => projectDetail.value?.progressBoard?.latestLogs || []);
+const chapterOptions = computed(() => flattenChapters(projectDetail.value?.chapters || []));
+const assignmentRows = computed(() => flattenAssignments(projectDetail.value?.chapters || []));
 
 function statusLabel(status) {
   if (status === 'COMPLETED') return '已完成';
@@ -208,6 +334,16 @@ function statusLabel(status) {
 }
 
 function projectStatusType(status) {
+  if (status === 'COMPLETED') return 'success';
+  if (status === 'IN_PROGRESS') return 'warning';
+  return 'info';
+}
+
+function assignmentStatusLabel(status) {
+  return assignmentStatusOptions.find((item) => item.value === status)?.label || status || '待开始';
+}
+
+function assignmentStatusType(status) {
   if (status === 'COMPLETED') return 'success';
   if (status === 'IN_PROGRESS') return 'warning';
   return 'info';
@@ -226,11 +362,55 @@ function mapChapterTree(nodes = []) {
   }));
 }
 
+function flattenChapters(nodes = [], result = []) {
+  nodes.forEach((node) => {
+    result.push({
+      id: node.id,
+      label: `${node.chapterCode || ''} ${node.chapterTitle || ''}`.trim() || '未命名章节'
+    });
+    flattenChapters(node.children || [], result);
+  });
+  return result;
+}
+
+function flattenAssignments(nodes = [], result = []) {
+  nodes.forEach((node) => {
+    const chapterLabel = `${node.chapterCode || ''} ${node.chapterTitle || ''}`.trim() || '未命名章节';
+    (node.assignments || []).forEach((assignment) => {
+      result.push({
+        ...assignment,
+        chapterLabel
+      });
+    });
+    flattenAssignments(node.children || [], result);
+  });
+  return result;
+}
+
+function createAssignmentRow(data = {}) {
+  return {
+    chapterId: data.chapterId ?? null,
+    assigneeUserId: data.assigneeUserId ?? null,
+    roleType: data.roleType || '',
+    dueDate: data.dueDate || '',
+    assignmentStatus: data.assignmentStatus || 'PENDING',
+    remark: data.remark || ''
+  };
+}
+
 async function loadSemesters() {
   try {
     semesterOptions.value = await fetchSemesters();
   } catch {
     semesterOptions.value = [];
+  }
+}
+
+async function loadTeachers() {
+  try {
+    teacherOptions.value = await fetchTeachers();
+  } catch {
+    teacherOptions.value = [];
   }
 }
 
@@ -297,7 +477,7 @@ async function selectProject(id) {
 }
 
 async function loadPage() {
-  await Promise.allSettled([loadSemesters(), loadProjects()]);
+  await Promise.allSettled([loadSemesters(), loadTeachers(), loadProjects()]);
 }
 
 function handleSearch() {
@@ -311,6 +491,54 @@ function resetFilters() {
   filters.keyword = '';
   pager.pageNum = 1;
   loadProjects();
+}
+
+function appendAssignmentRow() {
+  assignmentFormRows.value.push(createAssignmentRow());
+}
+
+function removeAssignmentRow(index) {
+  assignmentFormRows.value.splice(index, 1);
+}
+
+async function openAssignmentDialog() {
+  if (!projectDetail.value?.id) {
+    return;
+  }
+  if (!teacherOptions.value.length) {
+    await loadTeachers();
+  }
+  const currentRows = assignmentRows.value.map((item) => createAssignmentRow(item));
+  assignmentFormRows.value = currentRows.length ? currentRows : [createAssignmentRow()];
+  assignmentVisible.value = true;
+}
+
+async function saveAssignments() {
+  if (!projectDetail.value?.id) {
+    return;
+  }
+
+  const payload = assignmentFormRows.value
+    .filter((item) => item.chapterId && item.assigneeUserId)
+    .map((item) => ({
+      chapterId: item.chapterId,
+      assigneeUserId: item.assigneeUserId,
+      roleType: item.roleType || null,
+      dueDate: item.dueDate || null,
+      assignmentStatus: item.assignmentStatus || 'PENDING',
+      remark: item.remark || null
+    }));
+
+  assignmentSaving.value = true;
+  try {
+    await saveReportAssignments(projectDetail.value.id, payload);
+    assignmentVisible.value = false;
+    ElMessage.success('成员分工已保存');
+    await selectProject(projectDetail.value.id);
+    await loadProjects();
+  } finally {
+    assignmentSaving.value = false;
+  }
 }
 
 onMounted(() => {
@@ -423,6 +651,12 @@ onMounted(() => {
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 18px;
   margin-top: 20px;
+}
+
+.assignment-toolbar {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 16px;
 }
 
 @media (max-width: 1320px) {
