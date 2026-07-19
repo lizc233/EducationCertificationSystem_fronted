@@ -152,7 +152,7 @@ import {
   resolveNavItem,
   resolveNavPath,
   ROLES
-} from '../data/navigation';
+} from '../data/navigationV2';
 import { ROLE_LABEL_MAP, useUserStore } from '../store/user';
 
 const route = useRoute();

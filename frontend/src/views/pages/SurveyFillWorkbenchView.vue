@@ -298,7 +298,7 @@ import { computed, reactive, ref } from 'vue';
 import { ElMessage } from 'element-plus';
 import StandardPage from '../../components/page/StandardPage.vue';
 import SectionCard from '../../components/page/SectionCard.vue';
-import { ROLES } from '../../data/navigation';
+import { ROLES } from '../../data/navigationV2';
 import {
   AUDIENCE_OPTIONS,
   PUBLISH_STATUS_OPTIONS,

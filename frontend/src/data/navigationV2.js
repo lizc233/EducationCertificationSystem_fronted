@@ -18,21 +18,21 @@ export const navGroups = [
         key: 'dashboard-super',
         path: '/dashboard',
         label: '首页概览',
-        summary: '查看全校认证工作总览、选课与成绩审批、系统状态和关键指标。',
+        summary: '查看全校认证工作总览、关键指标和系统状态。',
         roles: adminRoles
       },
       {
         key: 'dashboard-teacher',
         path: '/dashboard',
         label: '首页概览',
-        summary: '查看个人课程、课表、待审核成绩和教学待办。',
+        summary: '查看个人课程、课表、待办和教学提醒。',
         roles: teacherRoles
       },
       {
         key: 'dashboard-student',
         path: '/dashboard',
         label: '首页概览',
-        summary: '查看选课结果、学业进度、成绩发布和课程评价提醒。',
+        summary: '查看选课结果、学业进度、成绩发布和课程提醒。',
         roles: studentRoles
       },
       {
@@ -64,7 +64,7 @@ export const navGroups = [
     label: '基础管理',
     items: [
       { key: 'params', path: '/params', label: '系统参数', summary: '维护基础参数、认证阈值与系统配置。', roles: adminRoles },
-      { key: 'dicts', path: '/dicts', label: '数据字典', summary: '维护字典类型、字典项与业务表单选项。', roles: adminRoles },
+      { key: 'dicts', path: '/dicts', label: '数据字典', summary: '维护字典类型、字典项与表单选项。', roles: adminRoles },
       { key: 'logs', path: '/logs', label: '操作日志', summary: '查询登录记录、业务操作和导出历史。', roles: adminRoles },
       { key: 'announcements', path: '/announcements', label: '系统公告管理', summary: '发布面向全体用户的系统公告和通知。', roles: adminRoles }
     ]
@@ -118,7 +118,7 @@ export const navGroups = [
   {
     label: '用户管理',
     items: [
-      { key: 'users', path: '/users', label: '用户管理', summary: '统一维护管理员、老师和学生账号，支持单独新增、批量添加和启停管理。', roles: userManagementRoles }
+      { key: 'users', path: '/users', label: '用户管理', summary: '统一维护管理员、老师和学生账号，支持单独新增、批量添加和启停管理。', roles: userManagementRoles },
     ]
   },
   {
@@ -154,7 +154,7 @@ export const navGroups = [
       { key: 'my-courses-student', path: '/my-courses', label: '我的课程', summary: '查看已选课程、授课教师与课程公告。', roles: studentRoles },
       { key: 'my-schedule-student', path: '/my-schedule', label: '我的课表', summary: '查看本学期课程安排和上课时间。', roles: studentRoles },
       { key: 'my-scores', path: '/my-scores', label: '我的成绩', summary: '查看各课程成绩、考核项和总评结果。', roles: studentRoles },
-      { key: 'academic-progress', path: '/academic-progress', label: '学业进度', summary: '查看学分完成情况和课程类别进展。', roles: studentRoles },
+      { key: 'academic-progress', path: '/academic-progress', label: '学业进度', summary: '查看学分完成情况和课程类别进度。', roles: studentRoles },
       { key: 'my-achievement', path: '/my-achievement', label: '我的达成度报告', summary: '查看个人课程目标达成情况和建议。', roles: studentRoles }
     ]
   },

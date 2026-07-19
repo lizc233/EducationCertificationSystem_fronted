@@ -83,7 +83,7 @@ import { ElMessage } from 'element-plus';
 import { useRoute, useRouter } from 'vue-router';
 import StandardPage from '../../components/page/StandardPage.vue';
 import SectionCard from '../../components/page/SectionCard.vue';
-import { ROLES } from '../../data/navigation';
+import { ROLES } from '../../data/navigationV2';
 import { useUserStore } from '../../store/user';
 
 const route = useRoute();

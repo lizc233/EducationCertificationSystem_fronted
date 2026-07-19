@@ -35,7 +35,7 @@
 <script setup>
 import { computed } from 'vue';
 import { useRoute } from 'vue-router';
-import { buildBreadcrumbs, resolveNavGroup } from '../../data/navigation';
+import { buildBreadcrumbs, resolveNavGroup } from '../../data/navigationV2';
 import { useUserStore } from '../../store/user';
 
 const props = defineProps({

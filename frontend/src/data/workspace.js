@@ -1,4 +1,4 @@
-import { navs } from './navigation';
+import { navs } from './navigationV2';
 
 export const cycle = {
   name: '2026 年工程教育认证工作周期',

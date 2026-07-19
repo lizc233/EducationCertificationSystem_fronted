@@ -1,4 +1,4 @@
-import { ROLES } from './navigation';
+import { ROLES } from './navigationV2';
 
 const STORAGE_KEY = 'education_space_frontend_surveys_v1';
 export const MAX_SURVEY_QUESTION_COUNT = 50;

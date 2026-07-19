@@ -3,7 +3,7 @@ import request from '../utils/request';
 
 export const ROLE_LABEL_MAP = {
   ROLE_SUPER_ADMIN: '管理员',
-  ROLE_TEACHER: '老师',
+  ROLE_TEACHER: '教师',
   ROLE_STUDENT: '学生'
 };
 

@@ -112,7 +112,7 @@ import { computed, onMounted, reactive, ref, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { ElMessage } from 'element-plus';
 import { useUserStore } from '../store/user';
-import { ROLES, getRoleHomePath } from '../data/navigation';
+import { ROLES, getRoleHomePath } from '../data/navigationV2';
 
 const route = useRoute();
 const router = useRouter();
