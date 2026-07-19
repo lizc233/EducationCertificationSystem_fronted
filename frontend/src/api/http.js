@@ -1,16 +1,50 @@
-﻿import axios from 'axios';
+import axios from 'axios';
 import { ElMessage } from 'element-plus';
 
 const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || '/api';
+const SUCCESS_CODES = new Set([0, 1, 200]);
+const TOKEN_KEYS = [
+  'education_space_token',
+  'ecs_token'
+];
+const AUTH_STORAGE_KEYS = [
+  'education_space_token',
+  'ecs_token',
+  'education_space_user_info',
+  'education_space_permissions',
+  'education_space_menu_paths',
+  'education_space_menus'
+];
 
 const req = axios.create({
   baseURL: apiBaseUrl,
   timeout: 12000
 });
 
+function readToken() {
+  for (const key of TOKEN_KEYS) {
+    const value = localStorage.getItem(key);
+    if (value) {
+      return value;
+    }
+  }
+  return '';
+}
+
+function clearAuthState() {
+  AUTH_STORAGE_KEYS.forEach((key) => localStorage.removeItem(key));
+}
+
 req.interceptors.request.use((cfg) => {
-  const tk = localStorage.getItem('ecs_token') || localStorage.getItem('education_space_token');
-  if (tk) cfg.headers.Authorization = `Bearer ${tk}`;
+  const tk = readToken();
+  if (tk) {
+    cfg.headers = cfg.headers || {};
+    if (typeof cfg.headers.set === 'function') {
+      cfg.headers.set('Authorization', `Bearer ${tk}`);
+    } else {
+      cfg.headers.Authorization = `Bearer ${tk}`;
+    }
+  }
   return cfg;
 });
 
@@ -18,14 +52,24 @@ req.interceptors.response.use(
   (res) => {
     const d = res.data;
     if (d && typeof d === 'object' && Object.prototype.hasOwnProperty.call(d, 'code')) {
-      if (d.code === 1 || d.code === 200) return d.data ?? d;
+      if (SUCCESS_CODES.has(d.code)) return d.data ?? d;
       if (!res.config?.skipErrorMessage) ElMessage.error(d.msg || d.message || 'Request failed');
       return Promise.reject(d);
     }
     return d;
   },
   (err) => {
-    if (!err?.config?.skipErrorMessage) ElMessage.error(err?.response?.data?.msg || err.message || 'Request failed');
+    const status = err?.response?.status;
+    const message = err?.response?.data?.msg || err?.response?.data?.message || err.message || 'Request failed';
+
+    if (status === 401) {
+      clearAuthState();
+      if (window.location.pathname !== '/login') {
+        window.location.href = '/login';
+      }
+    }
+
+    if (!err?.config?.skipErrorMessage) ElMessage.error(message);
     return Promise.reject(err);
   }
 );
@@ -95,4 +139,3 @@ export async function download(url, params, fileName, cfg = {}) {
 }
 
 export default req;
-

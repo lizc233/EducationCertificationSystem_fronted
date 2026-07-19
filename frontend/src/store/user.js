@@ -1,17 +1,11 @@
-import { defineStore } from 'pinia';
+﻿import { defineStore } from 'pinia';
 import { getVisibleNavGroups, navs, ROLES } from '../data/navigation';
 import request from '../utils/request';
 
 export const ROLE_LABEL_MAP = {
-<<<<<<< HEAD
-  ROLE_SUPER_ADMIN: '管理员',
-  ROLE_TEACHER: '教师',
-  ROLE_STUDENT: '学生'
-=======
   [ROLES.SUPER]: '管理员',
   [ROLES.TEACHER]: '老师',
   [ROLES.STUDENT]: '学生'
->>>>>>> 4a300da7d2fbf6345784db74d6f79b3c7114bbd0
 };
 
 const TOKEN_KEY = 'education_space_token';
@@ -29,7 +23,7 @@ const LOCAL_USERS = [
     accountId: 'A2026001',
     realName: '系统管理员',
     role: ROLES.SUPER,
-    department: '认证中心',
+    department: '璁よ瘉涓績',
     phone: '13800000001',
     email: 'admin@example.com',
     status: 1,
@@ -38,7 +32,7 @@ const LOCAL_USERS = [
   {
     id: 2,
     accountId: 'T2026001',
-    realName: '张敏',
+    realName: '寮犳晱',
     role: ROLES.TEACHER,
     department: '计算机学院',
     phone: '13800000002',
@@ -49,7 +43,7 @@ const LOCAL_USERS = [
   {
     id: 3,
     accountId: 'S2026001',
-    realName: '李晨',
+    realName: '鏉庢櫒',
     role: ROLES.STUDENT,
     department: '计算机学院',
     phone: '13800000003',
@@ -212,7 +206,7 @@ export const useUserStore = defineStore('user', {
     },
     async login(account, password, captcha) {
       if (!captcha) {
-        throw new Error('请输入验证码');
+        throw new Error('璇疯緭鍏ラ獙璇佺爜');
       }
 
       const trimmedAccount = String(account || '').trim();
@@ -230,7 +224,7 @@ export const useUserStore = defineStore('user', {
       } catch (error) {
         const status = error?.response?.status;
         if (status !== 404) {
-          throw new Error(error?.response?.data?.msg || error?.response?.data?.message || error?.message || '登录失败');
+          throw new Error(error?.response?.data?.msg || error?.response?.data?.message || error?.message || '鐧诲綍澶辫触');
         }
       }
 

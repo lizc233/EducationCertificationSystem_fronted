@@ -1,7 +1,8 @@
-import axios from 'axios';
+﻿import axios from 'axios';
 import { ElMessage } from 'element-plus';
 
 const TOKEN_KEY = 'education_space_token';
+const SUCCESS_CODES = new Set([0, 1, 200]);
 
 const request = axios.create({
   baseURL: '/api',
@@ -24,7 +25,7 @@ request.interceptors.response.use(
       return payload;
     }
 
-    if (payload.code === 1 || payload.code === 200) {
+    if (SUCCESS_CODES.has(payload.code)) {
       return payload.data;
     }
 

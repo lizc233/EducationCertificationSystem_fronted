@@ -1,16 +1,16 @@
-<template>
+﻿<template>
   <StandardPage
-    title="用户管理"
-    :breadcrumbs="['首页', '用户管理', '用户管理']"
+    title="鐢ㄦ埛绠＄悊"
+    :breadcrumbs="['棣栭〉', '鐢ㄦ埛绠＄悊', '鐢ㄦ埛绠＄悊']"
     description="统一维护系统用户账号与组织架构基础数据。"
   >
     <section class="section-card tabs-card">
       <el-tabs v-model="activeTab" @tab-change="normalizeUsersRoute">
-        <el-tab-pane label="用户管理" name="users" />
-        <el-tab-pane label="学院管理" name="colleges" />
-        <el-tab-pane label="专业管理" name="majors" />
-        <el-tab-pane label="年级管理" name="grades" />
-        <el-tab-pane label="班级管理" name="classes" />
+        <el-tab-pane label="鐢ㄦ埛绠＄悊" name="users" />
+        <el-tab-pane label="瀛﹂櫌绠＄悊" name="colleges" />
+        <el-tab-pane label="涓撲笟绠＄悊" name="majors" />
+        <el-tab-pane label="骞寸骇绠＄悊" name="grades" />
+        <el-tab-pane label="鐝骇绠＄悊" name="classes" />
       </el-tabs>
     </section>
 
@@ -41,11 +41,11 @@
           <el-form-item>
             <el-select
               v-model="userFilters.userType"
-              placeholder="用户类型"
+              placeholder="鐢ㄦ埛绫诲瀷"
               clearable
               style="width: 160px"
             >
-              <el-option label="全部" value="" />
+              <el-option label="鍏ㄩ儴" value="" />
               <el-option
                 v-for="item in typeOptions"
                 :key="item.value"
@@ -56,33 +56,33 @@
           </el-form-item>
           <el-form-item>
             <el-select v-model="userFilters.status" placeholder="状态" clearable style="width: 140px">
-              <el-option label="全部" value="" />
-              <el-option label="启用" :value="1" />
-              <el-option label="停用" :value="0" />
+              <el-option label="鍏ㄩ儴" value="" />
+              <el-option label="鍚敤" :value="1" />
+              <el-option label="鍋滅敤" :value="0" />
             </el-select>
           </el-form-item>
           <el-form-item>
-            <el-button type="primary" @click="applyUserFilters">搜索</el-button>
-            <el-button @click="resetUserFilters">重置</el-button>
+            <el-button type="primary" @click="applyUserFilters">鎼滅储</el-button>
+            <el-button @click="resetUserFilters">閲嶇疆</el-button>
           </el-form-item>
         </el-form>
       </section>
 
       <section class="section-card">
         <div class="action-bar">
-          <el-button type="primary" @click="openUserDialog()">新增用户</el-button>
-          <el-button @click="exportUsers">导出</el-button>
+          <el-button type="primary" @click="openUserDialog()">鏂板鐢ㄦ埛</el-button>
+          <el-button @click="exportUsers">瀵煎嚭</el-button>
         </div>
 
-        <el-table v-loading="userLoading" :data="userRows" border stripe empty-text="暂无数据">
-          <el-table-column label="序号" width="72" align="center">
+        <el-table v-loading="userLoading" :data="userRows" border stripe empty-text="鏆傛棤鏁版嵁">
+          <el-table-column label="搴忓彿" width="72" align="center">
             <template #default="{ $index }">
               {{ (userPager.page - 1) * userPager.size + $index + 1 }}
             </template>
           </el-table-column>
-          <el-table-column prop="accountId" label="账号" min-width="140" />
-          <el-table-column prop="realName" label="姓名" min-width="120" />
-          <el-table-column label="用户类型" min-width="110">
+          <el-table-column prop="accountId" label="璐﹀彿" min-width="140" />
+          <el-table-column prop="realName" label="濮撳悕" min-width="120" />
+          <el-table-column label="鐢ㄦ埛绫诲瀷" min-width="110">
             <template #default="{ row }">
               <el-tag :type="typeTag(row.role)" effect="light">{{ typeLabel(row.role) }}</el-tag>
             </template>
@@ -91,18 +91,18 @@
           <el-table-column label="状态" width="100" align="center">
             <template #default="{ row }">
               <el-tag :type="Number(row.status) === 1 ? 'success' : 'info'" effect="light">
-                {{ Number(row.status) === 1 ? '启用' : '停用' }}
+                {{ Number(row.status) === 1 ? '鍚敤' : '鍋滅敤' }}
               </el-tag>
             </template>
           </el-table-column>
-          <el-table-column prop="createdAt" label="创建时间" min-width="170" />
-          <el-table-column label="操作" min-width="220" fixed="right">
+          <el-table-column prop="createdAt" label="鍒涘缓鏃堕棿" min-width="170" />
+          <el-table-column label="鎿嶄綔" min-width="220" fixed="right">
             <template #default="{ row }">
-              <el-button type="primary" link @click="openUserDialog(row)">编辑</el-button>
+              <el-button type="primary" link @click="openUserDialog(row)">缂栬緫</el-button>
               <el-button type="primary" link @click="toggleUserStatus(row)">
-                {{ Number(row.status) === 1 ? '停用' : '启用' }}
+                {{ Number(row.status) === 1 ? '鍋滅敤' : '鍚敤' }}
               </el-button>
-              <el-button type="danger" link @click="removeUser(row)">删除</el-button>
+              <el-button type="danger" link @click="removeUser(row)">鍒犻櫎</el-button>
             </template>
           </el-table-column>
         </el-table>
@@ -148,7 +148,7 @@
               clearable
               style="width: 180px"
             >
-              <el-option label="全部" value="" />
+              <el-option label="鍏ㄩ儴" value="" />
               <el-option v-for="item in collegeOptions" :key="item.id" :label="item.label" :value="item.id" />
             </el-select>
           </el-form-item>
@@ -159,7 +159,7 @@
               clearable
               style="width: 220px"
             >
-              <el-option label="全部" value="" />
+              <el-option label="鍏ㄩ儴" value="" />
               <el-option v-for="item in majorOptions" :key="item.id" :label="item.label" :value="item.id" />
             </el-select>
           </el-form-item>
@@ -170,9 +170,9 @@
               clearable
               style="width: 160px"
             >
-              <el-option label="全部" value="" />
-              <el-option label="2025级" value="2025级" />
-              <el-option label="2024级" value="2024级" />
+              <el-option label="鍏ㄩ儴" value="" />
+              <el-option label="2025绾? value="2025绾? />
+              <el-option label="2024绾? value="2024绾? />
             </el-select>
           </el-form-item>
           <el-form-item v-if="activeTab === 'classes'">
@@ -182,64 +182,64 @@
               clearable
               style="width: 220px"
             >
-              <el-option label="全部" value="" />
+              <el-option label="鍏ㄩ儴" value="" />
               <el-option v-for="item in majorOptions" :key="item.id" :label="item.label" :value="item.id" />
             </el-select>
           </el-form-item>
           <el-form-item>
             <el-select v-model="currentFilter.status" placeholder="状态" clearable style="width: 140px">
-              <el-option label="全部" value="" />
-              <el-option label="启用" :value="1" />
-              <el-option label="停用" :value="0" />
+              <el-option label="鍏ㄩ儴" value="" />
+              <el-option label="鍚敤" :value="1" />
+              <el-option label="鍋滅敤" :value="0" />
             </el-select>
           </el-form-item>
           <el-form-item>
-            <el-button type="primary" @click="currentPager.page = 1">搜索</el-button>
-            <el-button @click="resetOrgFilters">重置</el-button>
+            <el-button type="primary" @click="currentPager.page = 1">鎼滅储</el-button>
+            <el-button @click="resetOrgFilters">閲嶇疆</el-button>
           </el-form-item>
         </el-form>
       </section>
 
       <section class="section-card">
         <div class="action-bar">
-          <el-button type="primary" @click="openOrgDialog()">新增{{ currentLabel }}</el-button>
-          <el-button @click="ElMessage.info(`导入${currentLabel}功能预留`)">导入{{ currentLabel }}</el-button>
-          <el-button @click="exportOrg">导出</el-button>
+          <el-button type="primary" @click="openOrgDialog()">鏂板{{ currentLabel }}</el-button>
+          <el-button @click="ElMessage.info(`瀵煎叆${currentLabel}鍔熻兘棰勭暀`)">瀵煎叆{{ currentLabel }}</el-button>
+          <el-button @click="exportOrg">瀵煎嚭</el-button>
         </div>
 
-        <el-table :data="currentPageRows" border stripe empty-text="暂无数据">
-          <el-table-column label="序号" width="72" align="center">
+        <el-table :data="currentPageRows" border stripe empty-text="鏆傛棤鏁版嵁">
+          <el-table-column label="搴忓彿" width="72" align="center">
             <template #default="{ $index }">
               {{ (currentPager.page - 1) * currentPager.size + $index + 1 }}
             </template>
           </el-table-column>
 
           <template v-if="activeTab === 'colleges'">
-            <el-table-column prop="name" label="学院名称" min-width="180" />
-            <el-table-column prop="code" label="学院编码" min-width="130" />
-            <el-table-column prop="majorCount" label="专业数量" width="100" align="center" />
-            <el-table-column prop="teacherCount" label="教师人数" width="100" align="center" />
-            <el-table-column prop="studentCount" label="学生人数" width="100" align="center" />
+            <el-table-column prop="name" label="瀛﹂櫌鍚嶇О" min-width="180" />
+            <el-table-column prop="code" label="瀛﹂櫌缂栫爜" min-width="130" />
+            <el-table-column prop="majorCount" label="涓撲笟鏁伴噺" width="100" align="center" />
+            <el-table-column prop="teacherCount" label="鏁欏笀浜烘暟" width="100" align="center" />
+            <el-table-column prop="studentCount" label="瀛︾敓浜烘暟" width="100" align="center" />
           </template>
 
           <template v-else-if="activeTab === 'majors'">
-            <el-table-column prop="name" label="专业名称" min-width="180" />
-            <el-table-column prop="code" label="专业编码" min-width="130" />
+            <el-table-column prop="name" label="涓撲笟鍚嶇О" min-width="180" />
+            <el-table-column prop="code" label="涓撲笟缂栫爜" min-width="130" />
             <el-table-column prop="collegeName" label="所属学院" min-width="160" />
-            <el-table-column prop="gradeCount" label="年级数量" width="100" align="center" />
-            <el-table-column prop="classCount" label="班级数量" width="100" align="center" />
+            <el-table-column prop="gradeCount" label="骞寸骇鏁伴噺" width="100" align="center" />
+            <el-table-column prop="classCount" label="鐝骇鏁伴噺" width="100" align="center" />
           </template>
 
           <template v-else-if="activeTab === 'grades'">
-            <el-table-column prop="name" label="年级名称" min-width="120" />
+            <el-table-column prop="name" label="骞寸骇鍚嶇О" min-width="120" />
             <el-table-column prop="majorName" label="所属专业" min-width="180" />
             <el-table-column prop="collegeName" label="所属学院" min-width="160" />
-            <el-table-column prop="classCount" label="班级数量" width="100" align="center" />
+            <el-table-column prop="classCount" label="鐝骇鏁伴噺" width="100" align="center" />
           </template>
 
           <template v-else>
-            <el-table-column prop="name" label="班级名称" min-width="150" />
-            <el-table-column prop="code" label="班级编码" min-width="130" />
+            <el-table-column prop="name" label="鐝骇鍚嶇О" min-width="150" />
+            <el-table-column prop="code" label="鐝骇缂栫爜" min-width="130" />
             <el-table-column prop="gradeName" label="所属年级" min-width="110" />
             <el-table-column prop="majorName" label="所属专业" min-width="180" />
             <el-table-column prop="collegeName" label="所属学院" min-width="160" />
@@ -248,18 +248,18 @@
           <el-table-column label="状态" width="96" align="center">
             <template #default="{ row }">
               <el-tag :type="row.status === 1 ? 'success' : 'info'" effect="light">
-                {{ row.status === 1 ? '启用' : '停用' }}
+                {{ row.status === 1 ? '鍚敤' : '鍋滅敤' }}
               </el-tag>
             </template>
           </el-table-column>
-          <el-table-column prop="createdAt" label="创建时间" min-width="170" />
-          <el-table-column label="操作" min-width="220" fixed="right">
+          <el-table-column prop="createdAt" label="鍒涘缓鏃堕棿" min-width="170" />
+          <el-table-column label="鎿嶄綔" min-width="220" fixed="right">
             <template #default="{ row }">
-              <el-button type="primary" link @click="openOrgDialog(row)">编辑</el-button>
+              <el-button type="primary" link @click="openOrgDialog(row)">缂栬緫</el-button>
               <el-button type="primary" link @click="toggleOrgStatus(row)">
-                {{ row.status === 1 ? '停用' : '启用' }}
+                {{ row.status === 1 ? '鍋滅敤' : '鍚敤' }}
               </el-button>
-              <el-button type="danger" link @click="removeOrg(row)">删除</el-button>
+              <el-button type="danger" link @click="removeOrg(row)">鍒犻櫎</el-button>
             </template>
           </el-table-column>
         </el-table>
@@ -278,17 +278,17 @@
       </section>
     </template>
 
-    <el-dialog v-model="userDialog.visible" :title="userDialog.id ? '编辑用户' : '新增用户'" width="620px">
+    <el-dialog v-model="userDialog.visible" :title="userDialog.id ? '缂栬緫鐢ㄦ埛' : '鏂板鐢ㄦ埛'" width="620px">
       <el-form ref="userFormRef" :model="userDialog" :rules="userRules" label-width="88px">
-        <el-form-item label="用户类型" prop="role">
+        <el-form-item label="鐢ㄦ埛绫诲瀷" prop="role">
           <el-select v-model="userDialog.role" class="w-full">
             <el-option v-for="item in typeOptions" :key="item.value" :label="item.label" :value="item.value" />
           </el-select>
         </el-form-item>
-        <el-form-item label="账号" prop="accountId">
+        <el-form-item label="璐﹀彿" prop="accountId">
           <el-input v-model.trim="userDialog.accountId" placeholder="请输入账号" />
         </el-form-item>
-        <el-form-item label="姓名" prop="realName">
+        <el-form-item label="濮撳悕" prop="realName">
           <el-input v-model.trim="userDialog.realName" placeholder="请输入姓名" />
         </el-form-item>
 
@@ -339,34 +339,34 @@
         </template>
 
         <el-form-item label="手机号" prop="phone">
-          <el-input v-model.trim="userDialog.phone" placeholder="请输入手机号" />
+          <el-input v-model.trim="userDialog.phone" placeholder="璇疯緭鍏ユ墜鏈哄彿" />
         </el-form-item>
-        <el-form-item label="邮箱" prop="email">
+        <el-form-item label="閭" prop="email">
           <el-input v-model.trim="userDialog.email" placeholder="请输入邮箱" />
         </el-form-item>
       </el-form>
       <template #footer>
-        <el-button @click="userDialog.visible = false">取消</el-button>
-        <el-button type="primary" :loading="userSaving" @click="saveUser">保存</el-button>
+        <el-button @click="userDialog.visible = false">鍙栨秷</el-button>
+        <el-button type="primary" :loading="userSaving" @click="saveUser">淇濆瓨</el-button>
       </template>
     </el-dialog>
 
-    <el-dialog v-model="orgDialog.visible" :title="orgDialog.id ? `编辑${currentLabel}` : `新增${currentLabel}`" width="620px">
+    <el-dialog v-model="orgDialog.visible" :title="orgDialog.id ? `缂栬緫${currentLabel}` : `鏂板${currentLabel}`" width="620px">
       <el-form ref="orgFormRef" :model="orgDialog" :rules="orgRules" label-width="88px">
         <template v-if="activeTab === 'colleges'">
-          <el-form-item label="学院名称" prop="name">
+          <el-form-item label="瀛﹂櫌鍚嶇О" prop="name">
             <el-input v-model.trim="orgDialog.name" placeholder="请输入学院名称" />
           </el-form-item>
-          <el-form-item label="学院编码" prop="code">
+          <el-form-item label="瀛﹂櫌缂栫爜" prop="code">
             <el-input v-model.trim="orgDialog.code" placeholder="请输入学院编码" />
           </el-form-item>
         </template>
 
         <template v-else-if="activeTab === 'majors'">
-          <el-form-item label="专业名称" prop="name">
+          <el-form-item label="涓撲笟鍚嶇О" prop="name">
             <el-input v-model.trim="orgDialog.name" placeholder="请输入专业名称" />
           </el-form-item>
-          <el-form-item label="专业编码" prop="code">
+          <el-form-item label="涓撲笟缂栫爜" prop="code">
             <el-input v-model.trim="orgDialog.code" placeholder="请输入专业编码" />
           </el-form-item>
           <el-form-item label="所属学院" prop="collegeId">
@@ -377,7 +377,7 @@
         </template>
 
         <template v-else-if="activeTab === 'grades'">
-          <el-form-item label="年级名称" prop="name">
+          <el-form-item label="骞寸骇鍚嶇О" prop="name">
             <el-input v-model.trim="orgDialog.name" placeholder="请输入年级名称" />
           </el-form-item>
           <el-form-item label="所属专业" prop="majorId">
@@ -388,10 +388,10 @@
         </template>
 
         <template v-else>
-          <el-form-item label="班级名称" prop="name">
+          <el-form-item label="鐝骇鍚嶇О" prop="name">
             <el-input v-model.trim="orgDialog.name" placeholder="请输入班级名称" />
           </el-form-item>
-          <el-form-item label="班级编码" prop="code">
+          <el-form-item label="鐝骇缂栫爜" prop="code">
             <el-input v-model.trim="orgDialog.code" placeholder="请输入班级编码" />
           </el-form-item>
           <el-form-item label="所属年级" prop="gradeId">
@@ -403,17 +403,17 @@
 
         <el-form-item label="状态" prop="status">
           <el-select v-model="orgDialog.status" class="w-full">
-            <el-option label="启用" :value="1" />
-            <el-option label="停用" :value="0" />
+            <el-option label="鍚敤" :value="1" />
+            <el-option label="鍋滅敤" :value="0" />
           </el-select>
         </el-form-item>
-        <el-form-item label="说明">
+        <el-form-item label="璇存槑">
           <el-input v-model.trim="orgDialog.remark" type="textarea" :rows="3" placeholder="请输入说明" />
         </el-form-item>
       </el-form>
       <template #footer>
-        <el-button @click="orgDialog.visible = false">取消</el-button>
-        <el-button type="primary" :loading="orgSaving" @click="saveOrg">保存</el-button>
+        <el-button @click="orgDialog.visible = false">鍙栨秷</el-button>
+        <el-button type="primary" :loading="orgSaving" @click="saveOrg">淇濆瓨</el-button>
       </template>
     </el-dialog>
   </StandardPage>
@@ -439,8 +439,8 @@ const activeTab = ref(['users', 'colleges', 'majors', 'grades', 'classes'].inclu
 
 const typeOptions = [
   { label: '管理员', value: 'ROLE_SUPER_ADMIN' },
-  { label: '教师', value: 'ROLE_TEACHER' },
-  { label: '学生', value: 'ROLE_STUDENT' }
+  { label: '鏁欏笀', value: 'ROLE_TEACHER' },
+  { label: '瀛︾敓', value: 'ROLE_STUDENT' }
 ];
 
 const userLoading = ref(false);
@@ -506,19 +506,19 @@ const orgState = reactive({
 });
 
 const currentLabel = computed(() => ({
-  colleges: '学院',
-  majors: '专业',
-  grades: '年级',
-  classes: '班级'
-}[activeTab.value] || '学院'));
+  colleges: '瀛﹂櫌',
+  majors: '涓撲笟',
+  grades: '骞寸骇',
+  classes: '鐝骇'
+}[activeTab.value] || '瀛﹂櫌'));
 
 const currentPanelTitle = computed(() => ({
-  users: '用户管理',
-  colleges: '学院管理',
-  majors: '专业管理',
-  grades: '年级管理',
-  classes: '班级管理'
-}[activeTab.value] || '用户管理'));
+  users: '鐢ㄦ埛绠＄悊',
+  colleges: '瀛﹂櫌绠＄悊',
+  majors: '涓撲笟绠＄悊',
+  grades: '骞寸骇绠＄悊',
+  classes: '鐝骇绠＄悊'
+}[activeTab.value] || '鐢ㄦ埛绠＄悊'));
 
 const currentPanelDesc = computed(() => ({
   users: '统一维护系统用户账号信息，并支持教师、学生组织归属配置。',
@@ -593,7 +593,7 @@ const userClassOptions = computed(() => classRows.value
 
 const userRules = computed(() => {
   const rules = {
-    role: [{ required: true, message: '请选择用户类型', trigger: 'change' }],
+    role: [{ required: true, message: '璇烽€夋嫨鐢ㄦ埛绫诲瀷', trigger: 'change' }],
     accountId: [{ required: true, message: '请输入账号', trigger: 'blur' }],
     realName: [{ required: true, message: '请输入姓名', trigger: 'blur' }]
   };
@@ -765,26 +765,9 @@ watch(() => userDialog.majorId, (majorId) => {
     return;
   }
 
-<<<<<<< HEAD
   const selectedMajor = majorMap.value.get(Number(majorId));
   if (selectedMajor && Number(userDialog.collegeId) !== Number(selectedMajor.collegeId)) {
     userDialog.collegeId = selectedMajor.collegeId;
-=======
-function buildDefaultRoleOptions() {
-  return ROLE_ORDER.map((value) => ({
-    label: ROLE_LABEL_MAP[value] || value,
-    value
-  }));
-}
-
-function isMissingEndpoint(error) {
-  return error?.response?.status === 404;
-}
-
-function formatDateTime(value) {
-  if (!value) {
-    return '-';
->>>>>>> 4a300da7d2fbf6345784db74d6f79b3c7114bbd0
   }
 
   const selectedGrade = gradeMap.value.get(Number(userDialog.gradeId));
@@ -845,7 +828,6 @@ function typeLabel(role) {
   return typeOptions.find((item) => item.value === role)?.label || role;
 }
 
-<<<<<<< HEAD
 function typeTag(role) {
   return role === 'ROLE_SUPER_ADMIN' ? 'danger' : role === 'ROLE_TEACHER' ? 'warning' : 'success';
 }
@@ -869,70 +851,11 @@ function buildUserDepartment(role = userDialog.role) {
     return [collegeName, majorName, gradeName, className].filter(Boolean).join(' / ');
   }
   return '';
-=======
-async function initializePage() {
-  try {
-    await fetchRoleOptions();
-    await Promise.all([loadSnapshot(), loadTable()]);
-  } catch (error) {
-    if (!isMissingEndpoint(error)) {
-      throw error;
-    }
-    roleOptions.value = buildDefaultRoleOptions();
-    snapshotRecords.value = [];
-    tableData.value = [];
-    pagination.total = 0;
-  }
-}
-
-async function fetchRoleOptions() {
-  try {
-    const rows = await request.get('/user/roles', {
-      skipErrorMessage: true
-    });
-    roleOptions.value = rows
-      .map((item) => ({
-        label: ROLE_LABEL_MAP[item.roleCode] || item.roleName || item.roleCode || item.code || item.name,
-        value: item.roleCode || item.code || ''
-      }))
-      .filter((item) => item.value)
-      .sort((left, right) => {
-        const leftIndex = ROLE_ORDER.indexOf(left.value);
-        const rightIndex = ROLE_ORDER.indexOf(right.value);
-        return (leftIndex === -1 ? Number.MAX_SAFE_INTEGER : leftIndex)
-          - (rightIndex === -1 ? Number.MAX_SAFE_INTEGER : rightIndex);
-      });
-  } catch (error) {
-    if (!isMissingEndpoint(error)) {
-      throw error;
-    }
-    roleOptions.value = buildDefaultRoleOptions();
-  }
-}
-
-async function loadSnapshot() {
-  try {
-    const page = await request.get('/user/list', {
-      params: {
-        pageNum: 1,
-        pageSize: 500
-      },
-      skipErrorMessage: true
-    });
-    snapshotRecords.value = page.records || [];
-  } catch (error) {
-    if (!isMissingEndpoint(error)) {
-      throw error;
-    }
-    snapshotRecords.value = [];
-  }
->>>>>>> 4a300da7d2fbf6345784db74d6f79b3c7114bbd0
 }
 
 async function loadUsers() {
   userLoading.value = true;
   try {
-<<<<<<< HEAD
     const [page, snapshotPage] = await Promise.all([
       request.get('/user/list', {
         params: {
@@ -949,20 +872,6 @@ async function loadUsers() {
     userRows.value = page.records || [];
     userSnapshot.value = snapshotPage.records || [];
     userPager.total = page.total || 0;
-=======
-    const page = await request.get('/user/list', {
-      params: buildQueryParams(),
-      skipErrorMessage: true
-    });
-    tableData.value = page.records || [];
-    pagination.total = page.total || 0;
-  } catch (error) {
-    if (!isMissingEndpoint(error)) {
-      throw error;
-    }
-    tableData.value = [];
-    pagination.total = 0;
->>>>>>> 4a300da7d2fbf6345784db74d6f79b3c7114bbd0
   } finally {
     userLoading.value = false;
   }
@@ -1035,10 +944,10 @@ async function saveUser() {
 
     if (userDialog.id) {
       await request.put(`/user/${userDialog.id}`, payload);
-      ElMessage.success('用户更新成功');
+      ElMessage.success('鐢ㄦ埛鏇存柊鎴愬姛');
     } else {
       await request.post('/user', payload);
-      ElMessage.success('用户新增成功');
+      ElMessage.success('鐢ㄦ埛鏂板鎴愬姛');
     }
 
     userDialog.visible = false;
@@ -1050,7 +959,7 @@ async function saveUser() {
 
 async function toggleUserStatus(row) {
   await request.put(`/user/${row.id}/status`, { status: Number(row.status) === 1 ? 0 : 1 });
-  ElMessage.success(`${row.realName} 已${Number(row.status) === 1 ? '停用' : '启用'}`);
+  ElMessage.success(`${row.realName} 宸?{Number(row.status) === 1 ? '鍋滅敤' : '鍚敤'}`);
   await loadUsers();
 }
 
@@ -1068,13 +977,13 @@ async function removeUser(row) {
 
 function exportUsers() {
   const lines = [
-    '用户类型,账号,姓名,所属组织,状态,创建时间',
+    '鐢ㄦ埛绫诲瀷,璐﹀彿,濮撳悕,鎵€灞炵粍缁?鐘舵€?鍒涘缓鏃堕棿',
     ...userRows.value.map((item) => [
       typeLabel(item.role),
       item.accountId,
       item.realName,
       item.department,
-      Number(item.status) === 1 ? '启用' : '停用',
+      Number(item.status) === 1 ? '鍚敤' : '鍋滅敤',
       item.createdAt || ''
     ].join(','))
   ];
@@ -1193,13 +1102,13 @@ async function saveOrg() {
       } else {
         await request.post('/org/colleges', payload);
       }
-      ElMessage.success(orgDialog.id ? '学院更新成功' : '学院新增成功');
+      ElMessage.success(orgDialog.id ? '瀛﹂櫌鏇存柊鎴愬姛' : '瀛﹂櫌鏂板鎴愬姛');
     } else if (activeTab.value === 'majors') {
       const payload = {
         majorName: orgDialog.name.trim(),
         majorCode: orgDialog.code.trim(),
         collegeId: Number(orgDialog.collegeId),
-        degreeType: '本科',
+        degreeType: '鏈',
         status: Number(orgDialog.status),
         remark: orgDialog.remark.trim()
       };
@@ -1208,11 +1117,11 @@ async function saveOrg() {
       } else {
         await request.post('/org/majors', payload);
       }
-      ElMessage.success(orgDialog.id ? '专业更新成功' : '专业新增成功');
+      ElMessage.success(orgDialog.id ? '涓撲笟鏇存柊鎴愬姛' : '涓撲笟鏂板鎴愬姛');
     } else if (activeTab.value === 'grades') {
       const gradeYear = Number(String(orgDialog.name || '').replace('级', '').trim());
       if (!Number.isInteger(gradeYear) || gradeYear <= 0) {
-        ElMessage.error('年级名称请使用如“2025级”的格式');
+        ElMessage.error('骞寸骇鍚嶇О璇蜂娇鐢ㄥ鈥?025绾р€濈殑鏍煎紡');
         return;
       }
       const payload = {
@@ -1228,7 +1137,7 @@ async function saveOrg() {
       } else {
         await request.post('/org/grades', payload);
       }
-      ElMessage.success(orgDialog.id ? '年级更新成功' : '年级新增成功');
+      ElMessage.success(orgDialog.id ? '骞寸骇鏇存柊鎴愬姛' : '骞寸骇鏂板鎴愬姛');
     } else {
       const grade = gradeMap.value.get(Number(orgDialog.gradeId));
       if (!grade) {
@@ -1250,7 +1159,7 @@ async function saveOrg() {
       } else {
         await request.post('/org/classes', payload);
       }
-      ElMessage.success(orgDialog.id ? '班级更新成功' : '班级新增成功');
+      ElMessage.success(orgDialog.id ? '鐝骇鏇存柊鎴愬姛' : '鐝骇鏂板鎴愬姛');
     }
 
     orgDialog.visible = false;
@@ -1273,7 +1182,7 @@ async function toggleOrgStatus(row) {
       majorName: row.name,
       majorCode: row.code,
       collegeId: row.collegeId,
-      degreeType: '本科',
+      degreeType: '鏈',
       status: row.status === 1 ? 0 : 1,
       remark: row.remark || ''
     });
@@ -1299,7 +1208,7 @@ async function toggleOrgStatus(row) {
     });
   }
 
-  ElMessage.success(`${currentLabel.value}已${row.status === 1 ? '停用' : '启用'}`);
+  ElMessage.success(`${currentLabel.value}宸?{row.status === 1 ? '鍋滅敤' : '鍚敤'}`);
   await loadOrgData();
 }
 
@@ -1313,7 +1222,7 @@ async function removeOrg(row) {
         : `确认删除【${row.name}】吗？`;
 
   try {
-    await ElMessageBox.confirm(message, '删除确认', { type: 'warning' });
+    await ElMessageBox.confirm(message, '鍒犻櫎纭', { type: 'warning' });
   } catch {
     return;
   }
@@ -1327,31 +1236,31 @@ async function removeOrg(row) {
         : '/org/classes';
 
   await request.delete(`${base}/${row.id}`);
-  ElMessage.success('删除成功');
+  ElMessage.success('鍒犻櫎鎴愬姛');
   currentPager.value.page = 1;
   await loadOrgData();
 }
 
 function exportOrg() {
   const headers = activeTab.value === 'colleges'
-    ? '学院名称,学院编码,专业数量,教师人数,学生人数,状态,创建时间'
+    ? '瀛﹂櫌鍚嶇О,瀛﹂櫌缂栫爜,涓撲笟鏁伴噺,鏁欏笀浜烘暟,瀛︾敓浜烘暟,鐘舵€?鍒涘缓鏃堕棿'
     : activeTab.value === 'majors'
-      ? '专业名称,专业编码,所属学院,年级数量,班级数量,状态,创建时间'
+      ? '涓撲笟鍚嶇О,涓撲笟缂栫爜,鎵€灞炲闄?骞寸骇鏁伴噺,鐝骇鏁伴噺,鐘舵€?鍒涘缓鏃堕棿'
       : activeTab.value === 'grades'
-        ? '年级名称,所属专业,所属学院,班级数量,状态,创建时间'
-        : '班级名称,班级编码,所属年级,所属专业,所属学院,状态,创建时间';
+        ? '骞寸骇鍚嶇О,鎵€灞炰笓涓?鎵€灞炲闄?鐝骇鏁伴噺,鐘舵€?鍒涘缓鏃堕棿'
+        : '鐝骇鍚嶇О,鐝骇缂栫爜,鎵€灞炲勾绾?鎵€灞炰笓涓?鎵€灞炲闄?鐘舵€?鍒涘缓鏃堕棿';
 
   const body = currentRows.value.map((item) => {
     if (activeTab.value === 'colleges') {
-      return [item.name, item.code, item.majorCount, item.teacherCount, item.studentCount, item.status === 1 ? '启用' : '停用', item.createdAt];
+      return [item.name, item.code, item.majorCount, item.teacherCount, item.studentCount, item.status === 1 ? '鍚敤' : '鍋滅敤', item.createdAt];
     }
     if (activeTab.value === 'majors') {
-      return [item.name, item.code, item.collegeName, item.gradeCount, item.classCount, item.status === 1 ? '启用' : '停用', item.createdAt];
+      return [item.name, item.code, item.collegeName, item.gradeCount, item.classCount, item.status === 1 ? '鍚敤' : '鍋滅敤', item.createdAt];
     }
     if (activeTab.value === 'grades') {
-      return [item.name, item.majorName, item.collegeName, item.classCount, item.status === 1 ? '启用' : '停用', item.createdAt];
+      return [item.name, item.majorName, item.collegeName, item.classCount, item.status === 1 ? '鍚敤' : '鍋滅敤', item.createdAt];
     }
-    return [item.name, item.code, item.gradeName, item.majorName, item.collegeName, item.status === 1 ? '启用' : '停用', item.createdAt];
+    return [item.name, item.code, item.gradeName, item.majorName, item.collegeName, item.status === 1 ? '鍚敤' : '鍋滅敤', item.createdAt];
   }).map((row) => row.join(','));
 
   downloadCsv([headers, ...body].join('\n'), `${activeTab.value}-${new Date().toISOString().slice(0, 10)}.csv`);
@@ -1406,3 +1315,4 @@ function downloadCsv(content, fileName) {
   margin-bottom: 16px;
 }
 </style>
+

@@ -1,6 +1,8 @@
-import { defineConfig } from 'vite';
+﻿import { defineConfig } from 'vite';
 import vue from '@vitejs/plugin-vue';
 import tailwindcss from '@tailwindcss/vite';
+
+const backendTarget = process.env.VITE_PROXY_TARGET || 'http://127.0.0.1:8080';
 
 export default defineConfig({
   plugins: [vue(), tailwindcss()],
@@ -9,11 +11,11 @@ export default defineConfig({
     port: 5173,
     proxy: {
       '/api': {
-        target: 'http://127.0.0.1:18081',
+        target: backendTarget,
         changeOrigin: true
       },
       '/notice': {
-        target: 'http://127.0.0.1:18081',
+        target: backendTarget,
         changeOrigin: true
       }
     }

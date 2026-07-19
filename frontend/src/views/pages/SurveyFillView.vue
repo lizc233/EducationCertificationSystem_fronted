@@ -1,17 +1,17 @@
-<template>
+﻿<template>
   <StandardPage
     :title="pageTitle"
     :breadcrumbs="breadcrumbs"
-    description="查看已发布问卷，完成填写，并按需查看统计与答卷明细。"
+    description="鏌ョ湅宸插彂甯冮棶鍗凤紝瀹屾垚濉啓锛屽苟鎸夐渶鏌ョ湅缁熻涓庣瓟鍗锋槑缁嗐€?
   >
     <template #actions>
-      <el-button :loading="loading.page" @click="loadPublishedQuestionnaires">刷新</el-button>
+      <el-button :loading="loading.page" @click="loadPublishedQuestionnaires">鍒锋柊</el-button>
     </template>
 
     <el-tabs v-model="activeTab">
-      <el-tab-pane label="问卷填报" name="fill">
+      <el-tab-pane label="闂嵎濉姤" name="fill">
         <div class="fill-layout">
-          <SectionCard title="已发布问卷">
+          <SectionCard title="宸插彂甯冮棶鍗?>
             <div class="survey-list">
               <button
                 v-for="item in questionnaires"
@@ -36,11 +36,11 @@
                   <span>{{ formatDateTime(item.endTime) }}</span>
                 </div>
               </button>
-              <el-empty v-if="!loading.page && !questionnaires.length" description="暂无已发布问卷" />
+              <el-empty v-if="!loading.page && !questionnaires.length" description="鏆傛棤宸插彂甯冮棶鍗? />
             </div>
           </SectionCard>
 
-          <SectionCard title="填写问卷">
+          <SectionCard title="濉啓闂嵎">
             <template #extra>
               <el-button
                 type="primary"
@@ -48,7 +48,7 @@
                 :loading="loading.submit"
                 @click="submitCurrentSurvey"
               >
-                提交问卷
+                鎻愪氦闂嵎
               </el-button>
             </template>
 
@@ -56,12 +56,12 @@
               <header class="paper-header">
                 <h3>{{ fillView.title }}</h3>
                 <div class="paper-header__meta">
-                  <span>开始：{{ formatDateTime(fillView.startTime) }}</span>
-                  <span>结束：{{ formatDateTime(fillView.endTime) }}</span>
-                  <span>{{ fillView.anonymousFlag === 1 ? '匿名' : '实名' }}</span>
+                  <span>寮€濮嬶細{{ formatDateTime(fillView.startTime) }}</span>
+                  <span>缁撴潫锛歿{ formatDateTime(fillView.endTime) }}</span>
+                  <span>{{ fillView.anonymousFlag === 1 ? '鍖垮悕' : '瀹炲悕' }}</span>
                 </div>
                 <el-alert
-                  :title="fillView.submitMessage || (fillView.canSubmit === 1 ? '可提交' : '当前不可提交')"
+                  :title="fillView.submitMessage || (fillView.canSubmit === 1 ? '鍙彁浜? : '褰撳墠涓嶅彲鎻愪氦')"
                   :type="fillView.canSubmit === 1 ? 'info' : 'warning'"
                   :closable="false"
                   show-icon
@@ -114,7 +114,7 @@
                     type="textarea"
                     :rows="4"
                     :disabled="!canSubmitCurrent"
-                    placeholder="请输入回答内容"
+                    placeholder="璇疯緭鍏ュ洖绛斿唴瀹?
                   />
 
                   <div v-else-if="question.questionType === 'MATRIX'" class="matrix-answer">
@@ -138,15 +138,15 @@
               </div>
             </div>
 
-            <el-empty v-else description="请选择一份问卷开始填写" />
+            <el-empty v-else description="璇烽€夋嫨涓€浠介棶鍗峰紑濮嬪～鍐? />
           </SectionCard>
         </div>
       </el-tab-pane>
 
-      <el-tab-pane v-if="isAdmin" label="回收统计" name="stats">
+      <el-tab-pane v-if="isAdmin" label="鍥炴敹缁熻" name="stats">
         <div class="stats-layout">
-          <SectionCard title="统计对象">
-            <el-select v-model="statsQuestionnaireId" placeholder="请选择问卷" style="width: 100%;" @change="loadStats">
+          <SectionCard title="缁熻瀵硅薄">
+            <el-select v-model="statsQuestionnaireId" placeholder="璇烽€夋嫨闂嵎" style="width: 100%;" @change="loadStats">
               <el-option
                 v-for="item in questionnaires"
                 :key="item.id"
@@ -158,29 +158,29 @@
 
           <div class="stats-kpis">
             <article class="stats-kpi">
-              <span>目标人数</span>
+              <span>鐩爣浜烘暟</span>
               <strong>{{ statsOverview.targetCount || 0 }}</strong>
             </article>
             <article class="stats-kpi">
-              <span>已提交</span>
+              <span>宸叉彁浜?/span>
               <strong>{{ statsOverview.submittedCount || 0 }}</strong>
             </article>
             <article class="stats-kpi">
-              <span>待提交</span>
+              <span>寰呮彁浜?/span>
               <strong>{{ statsOverview.pendingCount || 0 }}</strong>
             </article>
             <article class="stats-kpi">
-              <span>回收率</span>
+              <span>鍥炴敹鐜?/span>
               <strong>{{ formatRate(statsOverview.recoveryRate) }}</strong>
             </article>
           </div>
 
           <div class="stats-grid">
-            <SectionCard title="题目统计">
+            <SectionCard title="棰樼洰缁熻">
               <div v-if="questionStats.length" class="question-stats">
                 <article v-for="item in questionStats" :key="item.questionId" class="stats-card">
                   <strong>{{ item.questionCode }} {{ item.questionText }}</strong>
-                  <div class="stats-card__meta">{{ item.questionType }} / {{ item.responseCount || 0 }} 份回答</div>
+                  <div class="stats-card__meta">{{ item.questionType }} / {{ item.responseCount || 0 }} 浠藉洖绛?/div>
                   <div v-if="item.optionStats?.length" class="stats-lines">
                     <div v-for="option in item.optionStats" :key="option.optionId" class="stats-line">
                       <span>{{ option.optionText }}</span>
@@ -198,40 +198,40 @@
                   </div>
                 </article>
               </div>
-              <el-empty v-else description="暂无统计数据" />
+              <el-empty v-else description="鏆傛棤缁熻鏁版嵁" />
             </SectionCard>
 
-            <SectionCard title="答卷列表">
+            <SectionCard title="绛斿嵎鍒楄〃">
               <template #extra>
-                <el-button :disabled="!statsQuestionnaireId" @click="downloadResponses">导出答卷</el-button>
+                <el-button :disabled="!statsQuestionnaireId" @click="downloadResponses">瀵煎嚭绛斿嵎</el-button>
               </template>
               <el-table v-loading="loading.responses" :data="responseRows" border stripe>
-                <el-table-column prop="respondentName" label="填写人" min-width="140" />
-                <el-table-column prop="respondentType" label="角色" min-width="120" />
-                <el-table-column prop="submitStatus" label="状态" min-width="120" />
-                <el-table-column prop="answerCount" label="答题数" width="90" />
-                <el-table-column prop="submittedAt" label="提交时间" min-width="170">
+                <el-table-column prop="respondentName" label="濉啓浜? min-width="140" />
+                <el-table-column prop="respondentType" label="瑙掕壊" min-width="120" />
+                <el-table-column prop="submitStatus" label="鐘舵€? min-width="120" />
+                <el-table-column prop="answerCount" label="绛旈鏁? width="90" />
+                <el-table-column prop="submittedAt" label="鎻愪氦鏃堕棿" min-width="170">
                   <template #default="{ row }">{{ formatDateTime(row.submittedAt) }}</template>
                 </el-table-column>
-                <el-table-column label="操作" width="100">
+                <el-table-column label="鎿嶄綔" width="100">
                   <template #default="{ row }">
-                    <el-button type="primary" link @click="openResponseDetail(row)">详情</el-button>
+                    <el-button type="primary" link @click="openResponseDetail(row)">璇︽儏</el-button>
                   </template>
                 </el-table-column>
               </el-table>
-              <el-empty v-if="!loading.responses && !responseRows.length" description="暂无答卷数据" />
+              <el-empty v-if="!loading.responses && !responseRows.length" description="鏆傛棤绛斿嵎鏁版嵁" />
             </SectionCard>
           </div>
         </div>
       </el-tab-pane>
     </el-tabs>
 
-    <el-dialog v-model="responseDetailVisible" title="答卷详情" width="860px">
+    <el-dialog v-model="responseDetailVisible" title="绛斿嵎璇︽儏" width="860px">
       <div v-if="responseDetail" class="response-detail">
         <div class="response-summary">
-          <span>填写人：{{ responseDetail.respondentName || '-' }}</span>
-          <span>角色：{{ responseDetail.respondentType || '-' }}</span>
-          <span>提交时间：{{ formatDateTime(responseDetail.submittedAt) }}</span>
+          <span>濉啓浜猴細{{ responseDetail.respondentName || '-' }}</span>
+          <span>瑙掕壊锛歿{ responseDetail.respondentType || '-' }}</span>
+          <span>鎻愪氦鏃堕棿锛歿{ formatDateTime(responseDetail.submittedAt) }}</span>
         </div>
         <div class="answer-list">
           <article
@@ -245,7 +245,7 @@
           </article>
         </div>
       </div>
-      <el-empty v-else description="暂无答卷详情" />
+      <el-empty v-else description="鏆傛棤绛斿嵎璇︽儏" />
     </el-dialog>
   </StandardPage>
 </template>
@@ -255,9 +255,6 @@ import { computed, onMounted, reactive, ref } from 'vue';
 import { ElMessage } from 'element-plus';
 import StandardPage from '../../components/page/StandardPage.vue';
 import SectionCard from '../../components/page/SectionCard.vue';
-<<<<<<< HEAD
-import { ROLES } from '../../data/navigationV2';
-=======
 import {
   buildSurveyResponseDownloadUrl,
   fetchSurveyFillView,
@@ -269,8 +266,7 @@ import {
   fetchSurveyResponses,
   submitSurveyResponse
 } from '../../api/survey';
-import { ROLES } from '../../data/navigation';
->>>>>>> 4a300da7d2fbf6345784db74d6f79b3c7114bbd0
+import { ROLES } from '../../data/navigationV2';
 import { useUserStore } from '../../store/user';
 
 const userStore = useUserStore();
@@ -303,15 +299,15 @@ const responseDetailVisible = ref(false);
 const responseDetail = ref(null);
 
 const isAdmin = computed(() => userStore.userInfo.role === ROLES.SUPER);
-const pageTitle = computed(() => (isAdmin.value ? '问卷填报与统计' : '问卷填报'));
+const pageTitle = computed(() => (isAdmin.value ? '闂嵎濉姤涓庣粺璁? : '闂嵎濉姤'));
 const breadcrumbs = computed(() => {
   if (userStore.userInfo.role === ROLES.STUDENT) {
-    return ['首页', '我的学习', '问卷填报'];
+    return ['棣栭〉', '鎴戠殑瀛︿範', '闂嵎濉姤'];
   }
   if (userStore.userInfo.role === ROLES.TEACHER) {
-    return ['首页', '问卷与改进', '问卷填报'];
+    return ['棣栭〉', '闂嵎涓庢敼杩?, '闂嵎濉姤'];
   }
-  return ['首页', '问卷与改进', '问卷填报与统计'];
+  return ['棣栭〉', '闂嵎涓庢敼杩?, '闂嵎濉姤涓庣粺璁?];
 });
 const canSubmitCurrent = computed(() => fillView.value?.canSubmit === 1 && fillView.value?.alreadySubmitted !== 1);
 
@@ -396,21 +392,21 @@ function validateSubmit() {
       continue;
     }
     if (['SINGLE', 'SCALE'].includes(question.questionType) && !current.singleOptionId) {
-      ElMessage.warning(`请完成第 ${question.sortNo} 题`);
+      ElMessage.warning(`璇峰畬鎴愮 ${question.sortNo} 棰榒);
       return false;
     }
     if (question.questionType === 'MULTIPLE' && !current.optionIds.length) {
-      ElMessage.warning(`请完成第 ${question.sortNo} 题`);
+      ElMessage.warning(`璇峰畬鎴愮 ${question.sortNo} 棰榒);
       return false;
     }
     if (question.questionType === 'TEXT' && !current.answerText.trim()) {
-      ElMessage.warning(`请完成第 ${question.sortNo} 题`);
+      ElMessage.warning(`璇峰畬鎴愮 ${question.sortNo} 棰榒);
       return false;
     }
     if (question.questionType === 'MATRIX') {
       const selectedCount = Object.keys(current.matrixSelections || {}).filter((key) => current.matrixSelections[key]).length;
       if (!selectedCount) {
-        ElMessage.warning(`请完成第 ${question.sortNo} 题`);
+        ElMessage.warning(`璇峰畬鎴愮 ${question.sortNo} 棰榒);
         return false;
       }
     }
@@ -467,7 +463,7 @@ async function submitCurrentSurvey() {
   loading.submit = true;
   try {
     await submitSurveyResponse(fillView.value.questionnaireId, buildSubmitPayload());
-    ElMessage.success('问卷已提交');
+    ElMessage.success('闂嵎宸叉彁浜?);
     await selectQuestionnaire(fillView.value.questionnaireId);
     if (isAdmin.value && statsQuestionnaireId.value === fillView.value.questionnaireId) {
       await loadStats();
