@@ -18,7 +18,7 @@
       <article class="fill-kpi">
         <span>已提交</span>
         <strong>{{ submittedCount }}</strong>
-        <small>本地演示数据中的个人提交份数</small>
+        <small>当前账号已完成提交的问卷数量</small>
       </article>
       <article class="fill-kpi">
         <span>待完成</span>
@@ -58,7 +58,7 @@
 
             <SectionCard title="答卷区">
               <template #extra>
-                <el-button type="primary" :disabled="!selectedSurvey || selectedEntry?.alreadySubmitted" @click="submitSurvey">
+                <el-button type="primary" :disabled="!selectedSurvey || selectedSubmitBlocked" @click="submitSurvey">
                   {{ selectedEntry?.alreadySubmitted ? '已完成提交' : '提交答卷' }}
                 </el-button>
               </template>
@@ -85,12 +85,12 @@
                     <el-radio-group
                       v-if="['single', 'rating'].includes(question.type)"
                       v-model="answerState[question.id].singleValue"
-                      :disabled="selectedEntry?.alreadySubmitted"
+                      :disabled="selectedSubmitBlocked"
                     >
                       <el-radio
                         v-for="option in question.options"
                         :key="option.id"
-                        :label="option.value"
+                        :value="option.value"
                       >
                         {{ option.label }}
                       </el-radio>
@@ -99,7 +99,7 @@
                     <el-checkbox-group
                       v-else-if="question.type === 'multiple'"
                       v-model="answerState[question.id].multiValues"
-                      :disabled="selectedEntry?.alreadySubmitted"
+                      :disabled="selectedSubmitBlocked"
                     >
                       <el-checkbox
                         v-for="option in question.options"
@@ -115,7 +115,7 @@
                       v-model="answerState[question.id].text"
                       type="textarea"
                       :rows="4"
-                      :disabled="selectedEntry?.alreadySubmitted"
+                      :disabled="selectedSubmitBlocked"
                       :placeholder="question.placeholder || '请输入你的回答'"
                     />
 
@@ -124,12 +124,12 @@
                         <div class="matrix-answer__label">{{ row.label }}</div>
                         <el-radio-group
                           v-model="answerState[question.id].matrix[row.id]"
-                          :disabled="selectedEntry?.alreadySubmitted"
+                          :disabled="selectedSubmitBlocked"
                         >
                           <el-radio
                             v-for="column in question.columns"
                             :key="column.id"
-                            :label="column.value"
+                            :value="column.value"
                           >
                             {{ column.label }}
                           </el-radio>
@@ -294,10 +294,9 @@
 </template>
 
 <script setup>
-import { computed, reactive, ref } from 'vue';
-import { ElMessage } from 'element-plus';
 import StandardPage from '../../components/page/StandardPage.vue';
 import SectionCard from '../../components/page/SectionCard.vue';
+<<<<<<< HEAD
 import { ROLES } from '../../data/navigationV2';
 import {
   AUDIENCE_OPTIONS,
@@ -571,6 +570,45 @@ function downloadCsv() {
 loadSurveyCards();
 statsSurveyId.value = publishedSurveys.value[0]?.id || '';
 loadStats();
+=======
+import { useSurveyFillWorkbench } from './SurveyFillWorkbench.logic';
+
+const {
+  activeTab,
+  surveyCards,
+  selectedSurveyId,
+  selectedSurvey,
+  answerState,
+  statsSurveyId,
+  statsOverview,
+  questionStats,
+  responseRows,
+  detailVisible,
+  responseDetail,
+  isAdmin,
+  publishedSurveys,
+  selectedEntry,
+  selectedSubmitBlocked,
+  roleLabel,
+  pageTitle,
+  breadcrumbs,
+  pageDescription,
+  submittedCount,
+  pendingCount,
+  answeredCount,
+  completionRate,
+  questionTypeLabel,
+  typeLabel,
+  audienceLabel,
+  selectSurvey,
+  submitSurvey,
+  loadStats,
+  openResponseDetail,
+  formatAnswer,
+  downloadCsv,
+  formatDateTime
+} = useSurveyFillWorkbench();
+>>>>>>> 4a300da7d2fbf6345784db74d6f79b3c7114bbd0
 </script>
 
 <style scoped>

@@ -765,9 +765,26 @@ watch(() => userDialog.majorId, (majorId) => {
     return;
   }
 
+<<<<<<< HEAD
   const selectedMajor = majorMap.value.get(Number(majorId));
   if (selectedMajor && Number(userDialog.collegeId) !== Number(selectedMajor.collegeId)) {
     userDialog.collegeId = selectedMajor.collegeId;
+=======
+function buildDefaultRoleOptions() {
+  return ROLE_ORDER.map((value) => ({
+    label: ROLE_LABEL_MAP[value] || value,
+    value
+  }));
+}
+
+function isMissingEndpoint(error) {
+  return error?.response?.status === 404;
+}
+
+function formatDateTime(value) {
+  if (!value) {
+    return '-';
+>>>>>>> 4a300da7d2fbf6345784db74d6f79b3c7114bbd0
   }
 
   const selectedGrade = gradeMap.value.get(Number(userDialog.gradeId));
@@ -828,6 +845,7 @@ function typeLabel(role) {
   return typeOptions.find((item) => item.value === role)?.label || role;
 }
 
+<<<<<<< HEAD
 function typeTag(role) {
   return role === 'ROLE_SUPER_ADMIN' ? 'danger' : role === 'ROLE_TEACHER' ? 'warning' : 'success';
 }
@@ -851,11 +869,70 @@ function buildUserDepartment(role = userDialog.role) {
     return [collegeName, majorName, gradeName, className].filter(Boolean).join(' / ');
   }
   return '';
+=======
+async function initializePage() {
+  try {
+    await fetchRoleOptions();
+    await Promise.all([loadSnapshot(), loadTable()]);
+  } catch (error) {
+    if (!isMissingEndpoint(error)) {
+      throw error;
+    }
+    roleOptions.value = buildDefaultRoleOptions();
+    snapshotRecords.value = [];
+    tableData.value = [];
+    pagination.total = 0;
+  }
+}
+
+async function fetchRoleOptions() {
+  try {
+    const rows = await request.get('/user/roles', {
+      skipErrorMessage: true
+    });
+    roleOptions.value = rows
+      .map((item) => ({
+        label: ROLE_LABEL_MAP[item.roleCode] || item.roleName || item.roleCode || item.code || item.name,
+        value: item.roleCode || item.code || ''
+      }))
+      .filter((item) => item.value)
+      .sort((left, right) => {
+        const leftIndex = ROLE_ORDER.indexOf(left.value);
+        const rightIndex = ROLE_ORDER.indexOf(right.value);
+        return (leftIndex === -1 ? Number.MAX_SAFE_INTEGER : leftIndex)
+          - (rightIndex === -1 ? Number.MAX_SAFE_INTEGER : rightIndex);
+      });
+  } catch (error) {
+    if (!isMissingEndpoint(error)) {
+      throw error;
+    }
+    roleOptions.value = buildDefaultRoleOptions();
+  }
+}
+
+async function loadSnapshot() {
+  try {
+    const page = await request.get('/user/list', {
+      params: {
+        pageNum: 1,
+        pageSize: 500
+      },
+      skipErrorMessage: true
+    });
+    snapshotRecords.value = page.records || [];
+  } catch (error) {
+    if (!isMissingEndpoint(error)) {
+      throw error;
+    }
+    snapshotRecords.value = [];
+  }
+>>>>>>> 4a300da7d2fbf6345784db74d6f79b3c7114bbd0
 }
 
 async function loadUsers() {
   userLoading.value = true;
   try {
+<<<<<<< HEAD
     const [page, snapshotPage] = await Promise.all([
       request.get('/user/list', {
         params: {
@@ -872,6 +949,20 @@ async function loadUsers() {
     userRows.value = page.records || [];
     userSnapshot.value = snapshotPage.records || [];
     userPager.total = page.total || 0;
+=======
+    const page = await request.get('/user/list', {
+      params: buildQueryParams(),
+      skipErrorMessage: true
+    });
+    tableData.value = page.records || [];
+    pagination.total = page.total || 0;
+  } catch (error) {
+    if (!isMissingEndpoint(error)) {
+      throw error;
+    }
+    tableData.value = [];
+    pagination.total = 0;
+>>>>>>> 4a300da7d2fbf6345784db74d6f79b3c7114bbd0
   } finally {
     userLoading.value = false;
   }

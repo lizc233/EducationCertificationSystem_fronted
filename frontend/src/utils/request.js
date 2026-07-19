@@ -24,17 +24,22 @@ request.interceptors.response.use(
       return payload;
     }
 
-    if (payload.code === 0) {
+    if (payload.code === 1 || payload.code === 200) {
       return payload.data;
     }
 
-    const message = payload.message || '请求失败';
-    ElMessage.error(message);
-    return Promise.reject(new Error(message));
+    const message = payload.msg || payload.message || '请求失败';
+    if (!response.config?.skipErrorMessage) {
+      ElMessage.error(message);
+    }
+    return Promise.reject(Object.assign(new Error(message), {
+      response,
+      payload
+    }));
   },
   (error) => {
     const status = error?.response?.status;
-    const message = error?.response?.data?.message || error?.message || '请求失败';
+    const message = error?.response?.data?.msg || error?.response?.data?.message || error?.message || '请求失败';
 
     if (status === 401) {
       localStorage.removeItem(TOKEN_KEY);
@@ -47,8 +52,10 @@ request.interceptors.response.use(
       }
     }
 
-    ElMessage.error(message);
-    return Promise.reject(new Error(message));
+    if (!error?.config?.skipErrorMessage) {
+      ElMessage.error(message);
+    }
+    return Promise.reject(error);
   }
 );
 

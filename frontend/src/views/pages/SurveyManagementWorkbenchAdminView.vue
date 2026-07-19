@@ -2,10 +2,10 @@
   <StandardPage
     title="问卷设计与发布"
     :breadcrumbs="['首页', '问卷与改进', '问卷设计与发布']"
-    description="管理员可在前端工作台完成问卷类型配置、题型编排、题目数量控制、发布设置与预览检查。"
+    description="管理员可在当前页面完成问卷类型配置、题型编排、题目数量控制、发布设置与预览检查。"
   >
     <template #actions>
-      <el-button @click="restoreSeeds">恢复示例</el-button>
+      <el-button @click="restoreSeeds">刷新数据</el-button>
       <el-button @click="duplicateCurrent" :disabled="!editor.id">另存副本</el-button>
       <el-button @click="openPreview">预览</el-button>
       <el-button type="primary" @click="saveCurrent">保存问卷</el-button>
@@ -30,7 +30,7 @@
       <article class="survey-dashboard__card">
         <span>累计答卷</span>
         <strong>{{ summary.responses }}</strong>
-        <small>本地演示数据中的历史回收份数</small>
+        <small>系统中已回收的答卷数量</small>
       </article>
     </div>
 
@@ -269,28 +269,76 @@
               <small>{{ audienceLabel(editor.audienceRole) }} · {{ typeLabel(editor.surveyType) }}</small>
             </div>
 
-            <div class="publish-panel__grid">
-              <el-form-item label="预计回收份数">
-                <el-input-number v-model="editor.expectedCount" :min="1" :step="10" style="width: 100%;" />
-              </el-form-item>
-              <el-form-item label="截止时间">
-                <el-date-picker
-                  v-model="editor.deadline"
-                  type="datetime"
-                  value-format="YYYY-MM-DDTHH:mm"
-                  placeholder="设置回收截止时间"
-                  style="width: 100%;"
+            <div class="publish-panel__facts">
+              <div class="publish-fact">
+                <span>面向对象</span>
+                <strong>{{ audienceLabel(editor.audienceRole) }}</strong>
+              </div>
+              <div class="publish-fact">
+                <span>问卷类型</span>
+                <strong>{{ typeLabel(editor.surveyType) }}</strong>
+              </div>
+              <div class="publish-fact">
+                <span>题目数量</span>
+                <strong>{{ editor.questions.length }}</strong>
+              </div>
+              <div class="publish-fact">
+                <span>提交方式</span>
+                <strong>{{ editor.anonymous ? '匿名提交' : '实名提交' }}</strong>
+              </div>
+            </div>
+
+            <div class="publish-panel__section">
+              <div class="publish-panel__section-title">时间安排</div>
+              <div class="publish-panel__grid">
+                <el-form-item label="开始时间">
+                  <el-date-picker
+                    v-model="editor.startTime"
+                    type="datetime"
+                    value-format="YYYY-MM-DDTHH:mm"
+                    placeholder="不填则发布后立即生效"
+                    style="width: 100%;"
+                  />
+                </el-form-item>
+                <el-form-item label="截止时间">
+                  <el-date-picker
+                    v-model="editor.deadline"
+                    type="datetime"
+                    value-format="YYYY-MM-DDTHH:mm"
+                    placeholder="设置回收截止时间"
+                    style="width: 100%;"
+                  />
+                </el-form-item>
+              </div>
+            </div>
+
+            <div class="publish-panel__section">
+              <div class="publish-panel__section-title">发布设置</div>
+              <div class="publish-panel__grid publish-panel__grid--meta">
+                <el-form-item label="目标回收份数">
+                  <el-input-number v-model="editor.expectedCount" :min="1" :step="10" style="width: 100%;" />
+                </el-form-item>
+
+                <div class="publish-panel__color-field">
+                  <span class="publish-panel__color-label">封面主色</span>
+                  <div class="publish-panel__color-control">
+                    <el-color-picker v-model="editor.coverColor" show-alpha />
+                    <span class="publish-panel__color-value">{{ editor.coverColor || '#1f4f5c' }}</span>
+                  </div>
+                </div>
+              </div>
+
+              <el-form-item label="发布说明">
+                <el-input
+                  v-model="editor.channel"
+                  placeholder="例如：站内通知、班群提醒、线下通知"
                 />
               </el-form-item>
             </div>
 
-            <el-form-item label="投放渠道">
-              <el-input v-model="editor.channel" placeholder="例如：站内消息 + 短信链接" />
-            </el-form-item>
-
-            <el-form-item label="封面主色">
-              <el-color-picker v-model="editor.coverColor" show-alpha />
-            </el-form-item>
+            <div class="publish-panel__notice">
+              发布后问卷会出现在填写页面中；如果没有设置开始时间，则会在发布后立即生效。
+            </div>
 
             <div class="publish-actions">
               <el-button type="primary" @click="openPublishDialog">发布问卷</el-button>
@@ -408,8 +456,8 @@
           <strong>{{ formatDateTime(editor.deadline) }}</strong>
         </div>
         <div class="publish-dialog__row">
-          <span>预计份数</span>
-          <strong>{{ editor.expectedCount }}</strong>
+          <span>目标回收份数</span>
+          <strong>{{ editor.expectedCount || '未设置' }}</strong>
         </div>
       </div>
       <template #footer>
@@ -421,331 +469,55 @@
 </template>
 
 <script setup>
-import { computed, reactive, ref } from 'vue';
-import { ElMessage, ElMessageBox } from 'element-plus';
 import StandardPage from '../../components/page/StandardPage.vue';
 import SectionCard from '../../components/page/SectionCard.vue';
-import {
-  AUDIENCE_OPTIONS,
-  MAX_SURVEY_QUESTION_COUNT,
-  PUBLISH_STATUS_OPTIONS,
-  QUESTION_TYPE_OPTIONS,
-  SURVEY_TYPE_OPTIONS,
-  closeSurvey,
-  createEmptySurvey,
-  createQuestion,
-  duplicateSurvey,
-  formatDateTime,
-  listSurveys,
-  publishSurvey,
-  removeSurvey,
-  resetSurveyWorkbench,
-  saveSurvey,
-  summarizeQuestionTypes
-} from '../../data/surveyWorkbench';
+import { useSurveyManagementWorkbenchAdmin } from './SurveyManagementWorkbenchAdmin.logic';
 
-const surveyTypeOptions = SURVEY_TYPE_OPTIONS;
-const audienceOptions = AUDIENCE_OPTIONS;
-const questionTypeOptions = QUESTION_TYPE_OPTIONS;
-const maxQuestionCount = MAX_SURVEY_QUESTION_COUNT;
-
-const statusFilters = [
-  { label: '全部', value: 'ALL' },
-  ...PUBLISH_STATUS_OPTIONS
-];
-
-const surveys = ref([]);
-const activeStatus = ref('ALL');
-const selectedQuestionId = ref('');
-const previewVisible = ref(false);
-const publishVisible = ref(false);
-const tagInput = ref('');
-
-const editor = reactive(createEmptySurvey());
-
-function assignEditor(survey) {
-  Object.assign(editor, createEmptySurvey(), survey);
-  editor.questions = survey.questions || [];
-  editor.tags = survey.tags || [];
-  editor.responses = survey.responses || [];
-  editor.questionTargetCount = Math.min(
-    maxQuestionCount,
-    Math.max(1, Number(survey.questionTargetCount || editor.questions.length || 1))
-  );
-  selectedQuestionId.value = editor.questions[0]?.id || '';
-}
-
-function loadSurveys(targetId = '') {
-  surveys.value = listSurveys();
-  const fallbackId = targetId || editor.id || surveys.value[0]?.id;
-  if (!fallbackId) {
-    assignEditor(createEmptySurvey());
-    return;
-  }
-  const found = surveys.value.find((item) => item.id === fallbackId) || surveys.value[0];
-  assignEditor(found || createEmptySurvey());
-}
-
-const filteredSurveys = computed(() => {
-  if (activeStatus.value === 'ALL') {
-    return surveys.value;
-  }
-  return surveys.value.filter((item) => item.status === activeStatus.value);
-});
-
-const summary = computed(() => ({
-  total: surveys.value.length,
-  published: surveys.value.filter((item) => item.status === 'PUBLISHED').length,
-  draft: surveys.value.filter((item) => item.status === 'DRAFT').length,
-  responses: surveys.value.reduce((total, item) => total + (item.responses?.length || 0), 0)
-}));
-
-const selectedQuestion = computed(() => editor.questions.find((item) => item.id === selectedQuestionId.value) || null);
-
-const questionSummaryText = computed(() => {
-  const summaryMap = summarizeQuestionTypes(editor.questions);
-  const text = Object.entries(summaryMap).map(([label, count]) => `${label}${count}题`);
-  return text.length ? text.join(' / ') : '尚未添加题目';
-});
-
-function statusLabel(status) {
-  return PUBLISH_STATUS_OPTIONS.find((item) => item.value === status)?.label || '草稿';
-}
-
-function statusTagType(status) {
-  if (status === 'PUBLISHED') return 'success';
-  if (status === 'CLOSED') return 'warning';
-  return 'info';
-}
-
-function questionTypeLabel(type) {
-  return QUESTION_TYPE_OPTIONS.find((item) => item.value === type)?.label || type;
-}
-
-function typeLabel(type) {
-  return SURVEY_TYPE_OPTIONS.find((item) => item.value === type)?.label || type;
-}
-
-function audienceLabel(role) {
-  return AUDIENCE_OPTIONS.find((item) => item.value === role)?.label || role;
-}
-
-function createSurvey() {
-  assignEditor(createEmptySurvey());
-}
-
-function selectSurvey(id) {
-  const survey = surveys.value.find((item) => item.id === id);
-  if (survey) {
-    assignEditor(typeof structuredClone === 'function' ? structuredClone(survey) : JSON.parse(JSON.stringify(survey)));
-  }
-}
-
-function saveCurrent() {
-  normalizeQuestions();
-  const saved = saveSurvey(editor);
-  loadSurveys(saved.id);
-  ElMessage.success('问卷已保存到前端本地工作台');
-}
-
-function duplicateCurrent() {
-  const duplicated = duplicateSurvey(editor.id);
-  if (duplicated) {
-    loadSurveys(duplicated.id);
-    ElMessage.success('已创建问卷副本');
-  }
-}
-
-async function removeCurrent() {
-  if (!editor.id) {
-    return;
-  }
-  try {
-    await ElMessageBox.confirm('删除后当前问卷将从前端工作台移除，是否继续？', '删除问卷', { type: 'warning' });
-  } catch {
-    return;
-  }
-  removeSurvey(editor.id);
-  loadSurveys();
-  ElMessage.success('问卷已删除');
-}
-
-function appendQuestion(type) {
-  if (editor.questions.length >= maxQuestionCount) {
-    ElMessage.warning(`单份问卷最多支持 ${maxQuestionCount} 道题目`);
-    editor.questionTargetCount = maxQuestionCount;
-    return;
-  }
-  const question = createQuestion(type, editor.questions.length + 1);
-  editor.questions.push(question);
-  normalizeQuestions();
-  selectedQuestionId.value = question.id;
-}
-
-function normalizeQuestions() {
-  editor.questions = editor.questions.slice(0, maxQuestionCount).map((question, index) => ({
-    ...question,
-    sortNo: index + 1,
-    code: question.code || `Q${index + 1}`
-  }));
-  editor.questionTargetCount = Math.min(maxQuestionCount, Math.max(editor.questions.length, 1));
-}
-
-async function applyQuestionCount() {
-  const nextCount = Math.min(maxQuestionCount, Math.max(1, Number(editor.questionTargetCount || 1)));
-  const currentCount = editor.questions.length;
-
-  if (nextCount === currentCount) {
-    ElMessage.info('当前题目数量已经等于目标数');
-    return;
-  }
-
-  if (nextCount > currentCount) {
-    for (let index = currentCount; index < nextCount; index += 1) {
-      editor.questions.push(createQuestion('single', index + 1));
-    }
-    normalizeQuestions();
-    selectedQuestionId.value = editor.questions[currentCount]?.id || editor.questions[0]?.id || '';
-    ElMessage.success(`已补齐到 ${nextCount} 题`);
-    return;
-  }
-
-  try {
-    await ElMessageBox.confirm(
-      `当前共有 ${currentCount} 题，调整为 ${nextCount} 题会删除末尾多出的题目，是否继续？`,
-      '调整题目数量',
-      { type: 'warning' }
-    );
-  } catch {
-    editor.questionTargetCount = Math.max(currentCount, 1);
-    return;
-  }
-
-  editor.questions = editor.questions.slice(0, nextCount);
-  normalizeQuestions();
-  selectedQuestionId.value = editor.questions[0]?.id || '';
-  ElMessage.success(`已调整为 ${nextCount} 题`);
-}
-
-function moveQuestion(index, offset) {
-  const targetIndex = index + offset;
-  if (targetIndex < 0 || targetIndex >= editor.questions.length) {
-    return;
-  }
-  const next = [...editor.questions];
-  const [current] = next.splice(index, 1);
-  next.splice(targetIndex, 0, current);
-  editor.questions = next;
-  normalizeQuestions();
-}
-
-function removeQuestion(index) {
-  const removed = editor.questions[index];
-  editor.questions.splice(index, 1);
-  normalizeQuestions();
-  if (selectedQuestionId.value === removed?.id) {
-    selectedQuestionId.value = editor.questions[0]?.id || '';
-  }
-}
-
-function appendOption(question) {
-  question.options.push({
-    id: `option_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
-    label: `选项 ${question.options.length + 1}`,
-    value: `${question.options.length + 1}`,
-    score: question.options.length + 1
-  });
-}
-
-function removeOption(question, optionIndex) {
-  question.options.splice(optionIndex, 1);
-}
-
-function appendMatrixRow(question) {
-  question.rows.push({
-    id: `row_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
-    label: `维度 ${question.rows.length + 1}`,
-    sortNo: question.rows.length + 1
-  });
-}
-
-function removeMatrixRow(question, rowIndex) {
-  question.rows.splice(rowIndex, 1);
-}
-
-function appendMatrixColumn(question) {
-  question.columns.push({
-    id: `col_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
-    label: `评价 ${question.columns.length + 1}`,
-    value: `${question.columns.length + 1}`,
-    sortNo: question.columns.length + 1
-  });
-}
-
-function removeMatrixColumn(question, columnIndex) {
-  question.columns.splice(columnIndex, 1);
-}
-
-function appendTag() {
-  const value = tagInput.value.trim();
-  if (!value) {
-    return;
-  }
-  if (!editor.tags.includes(value)) {
-    editor.tags.push(value);
-  }
-  tagInput.value = '';
-}
-
-function removeTag(tag) {
-  editor.tags = editor.tags.filter((item) => item !== tag);
-}
-
-function openPreview() {
-  previewVisible.value = true;
-}
-
-function openPublishDialog() {
-  if (!editor.questions.length) {
-    ElMessage.warning('请至少添加 1 道题目后再发布');
-    return;
-  }
-  if (!editor.deadline) {
-    ElMessage.warning('请先设置问卷截止时间');
-    return;
-  }
-  publishVisible.value = true;
-}
-
-function publishCurrent() {
-  normalizeQuestions();
-  const saved = saveSurvey(editor);
-  const published = publishSurvey(saved.id, {
-    deadline: editor.deadline,
-    expectedCount: editor.expectedCount,
-    channel: editor.channel,
-    scene: editor.scene
-  });
-  publishVisible.value = false;
-  loadSurveys(published.id);
-  ElMessage.success('问卷已发布，教师/学生端将按对象显示');
-}
-
-function closeCurrentSurvey() {
-  const closed = closeSurvey(editor.id);
-  if (closed) {
-    loadSurveys(closed.id);
-    ElMessage.success('当前问卷已结束回收');
-  }
-}
-
-function restoreSeeds() {
-  resetSurveyWorkbench();
-  loadSurveys();
-  ElMessage.success('已恢复前端示例问卷数据');
-}
-
-loadSurveys();
+const {
+  surveyTypeOptions,
+  audienceOptions,
+  questionTypeOptions,
+  maxQuestionCount,
+  statusFilters,
+  activeStatus,
+  selectedQuestionId,
+  previewVisible,
+  publishVisible,
+  tagInput,
+  editor,
+  filteredSurveys,
+  summary,
+  selectedQuestion,
+  questionSummaryText,
+  statusLabel,
+  statusTagType,
+  questionTypeLabel,
+  typeLabel,
+  audienceLabel,
+  createSurvey,
+  selectSurvey,
+  saveCurrent,
+  duplicateCurrent,
+  removeCurrent,
+  appendQuestion,
+  applyQuestionCount,
+  moveQuestion,
+  removeQuestion,
+  appendOption,
+  removeOption,
+  appendMatrixRow,
+  removeMatrixRow,
+  appendMatrixColumn,
+  removeMatrixColumn,
+  appendTag,
+  removeTag,
+  openPreview,
+  openPublishDialog,
+  publishCurrent,
+  closeCurrentSurvey,
+  restoreSeeds,
+  formatDateTime
+} = useSurveyManagementWorkbenchAdmin();
 </script>
 
 <style scoped>
@@ -1010,6 +782,91 @@ loadSurveys();
   font-size: 24px;
 }
 
+.publish-panel__section {
+  display: grid;
+  gap: 12px;
+  padding: 16px;
+  border-radius: 16px;
+  background: rgba(31, 79, 92, 0.04);
+  border: 1px solid rgba(31, 79, 92, 0.08);
+}
+
+.publish-panel__section-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.publish-panel .publish-panel__grid {
+  grid-template-columns: 1fr;
+}
+
+.publish-panel__facts {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.publish-fact {
+  padding: 14px 16px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.92);
+  border: 1px solid rgba(31, 79, 92, 0.08);
+}
+
+.publish-fact span,
+.publish-panel__notice,
+.publish-panel__color-label,
+.publish-panel__color-value {
+  font-size: 13px;
+  color: var(--text-light);
+}
+
+.publish-fact strong {
+  display: block;
+  margin-top: 8px;
+  color: var(--text-primary);
+}
+
+.publish-panel__grid--meta {
+  align-items: stretch;
+}
+
+.publish-panel__color-field {
+  display: grid;
+  gap: 10px;
+  padding: 4px 0 0;
+}
+
+.publish-panel__color-control {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 40px;
+  padding: 8px 12px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.92);
+  border: 1px solid rgba(31, 79, 92, 0.08);
+}
+
+.publish-panel__color-value {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+}
+
+.publish-panel__notice {
+  line-height: 1.6;
+  padding: 0 4px;
+}
+
+.publish-panel :deep(.el-form-item) {
+  margin-bottom: 0;
+}
+
+.publish-panel :deep(.el-input-number) {
+  width: 100%;
+}
+
 .summary-item {
   padding: 14px 16px;
   border-radius: 14px;
@@ -1077,6 +934,7 @@ loadSurveys();
   .survey-meta-grid,
   .question-card__grid,
   .publish-panel__grid,
+  .publish-panel__facts,
   .question-bank__grid {
     grid-template-columns: 1fr;
   }

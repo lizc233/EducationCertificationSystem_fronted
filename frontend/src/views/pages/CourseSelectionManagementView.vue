@@ -217,6 +217,10 @@ function createDialogForm() {
   };
 }
 
+function isMissingEndpoint(error) {
+  return error?.response?.status === 404;
+}
+
 async function loadTasks() {
   loading.value = true;
   try {
@@ -225,9 +229,15 @@ async function loadTasks() {
         term: filters.term || undefined,
         status: filters.status || undefined,
         keyword: filters.keyword || undefined
-      }
+      },
+      skipErrorMessage: true
     });
     taskRows.value = rows || [];
+  } catch (error) {
+    if (!isMissingEndpoint(error)) {
+      throw error;
+    }
+    taskRows.value = [];
   } finally {
     loading.value = false;
   }
@@ -291,8 +301,15 @@ async function openRosterDialog(row) {
   rosterDialogTitle.value = `${row.courseName} 选课名单`;
   rosterDialogVisible.value = true;
   try {
-    const rows = await request.get(`/course-selection/admin/tasks/${row.id}/students`);
+    const rows = await request.get(`/course-selection/admin/tasks/${row.id}/students`, {
+      skipErrorMessage: true
+    });
     rosterRows.value = rows || [];
+  } catch (error) {
+    if (!isMissingEndpoint(error)) {
+      throw error;
+    }
+    rosterRows.value = [];
   } finally {
     rosterLoading.value = false;
   }

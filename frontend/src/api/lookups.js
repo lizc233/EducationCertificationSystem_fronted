@@ -16,12 +16,24 @@ export function fetchCourses() {
   return get('/lookups/courses');
 }
 
+export function fetchTeachers() {
+  return get('/lookups/teachers');
+}
+
 export function fetchSemesters() {
   return get('/lookups/semesters');
 }
 
+export function fetchStudents() {
+  return get('/lookups/students');
+}
+
 export function fetchProgramVersions() {
   return get('/lookups/program-versions');
+}
+
+export function fetchTargets() {
+  return get('/lookups/targets');
 }
 
 export function fetchGraduationRequirements() {

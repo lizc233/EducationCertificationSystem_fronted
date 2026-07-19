@@ -9,11 +9,11 @@ export default defineConfig({
     port: 5173,
     proxy: {
       '/api': {
-        target: 'http://localhost:8080',
+        target: 'http://127.0.0.1:18081',
         changeOrigin: true
       },
       '/notice': {
-        target: 'http://localhost:8080',
+        target: 'http://127.0.0.1:18081',
         changeOrigin: true
       }
     }

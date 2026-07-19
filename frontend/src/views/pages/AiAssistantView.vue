@@ -2,7 +2,7 @@
   <StandardPage
     title="AI 助手"
     :breadcrumbs="['首页', '工作台', 'AI 助手']"
-    description="对接真实 DeepSeek + RAG 后端能力，支持报告章节扩写/润色、持续改进建议生成、结果确认回写和历史记录追踪。"
+    description="支持报告章节生成与润色、改进建议生成、结果确认回写和历史记录追踪。"
   >
     <template #actions>
       <el-button @click="rebuildKnowledge" :loading="loading.operate">重建知识索引</el-button>
@@ -161,7 +161,7 @@
             <article class="page-kpi">
               <div class="page-kpi__label">请求编号</div>
               <div class="page-kpi__value page-kpi__value--small">{{ currentResult.requestNo }}</div>
-              <div class="page-kpi__desc">后端落库后的唯一请求号</div>
+              <div class="page-kpi__desc">本次分析任务的唯一编号</div>
             </article>
             <article class="page-kpi">
               <div class="page-kpi__label">场景</div>
