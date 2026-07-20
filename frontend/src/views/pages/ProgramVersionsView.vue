@@ -144,9 +144,12 @@
     </el-dialog>
 
     <el-dialog v-model="gradeDialog.visible" :title="`适用年级 - ${gradeDialog.versionName}`" width="560px">
+      <div v-if="gradeDialog.majorId" class="grade-tip">
+        Current major: {{ resolveOptionLabel(majorOptions, gradeDialog.majorId) }}
+      </div>
       <el-checkbox-group v-model="gradeDialog.gradeIds">
         <div class="grade-grid">
-          <el-checkbox v-for="item in gradeOptions" :key="item.value" :label="item.value">
+          <el-checkbox v-for="item in availableGradeOptions" :key="item.value" :label="item.value">
             {{ item.label }}
           </el-checkbox>
         </div>
@@ -160,7 +163,7 @@
 </template>
 
 <script setup>
-import { onMounted, reactive, ref } from 'vue';
+import { computed, onMounted, reactive, ref } from 'vue';
 import { ElMessage, ElMessageBox } from 'element-plus';
 import StandardPage from '../../components/page/StandardPage.vue';
 import SectionCard from '../../components/page/SectionCard.vue';
@@ -213,7 +216,16 @@ const gradeDialog = reactive({
   visible: false,
   versionId: null,
   versionName: '',
+  majorId: null,
   gradeIds: []
+});
+
+const availableGradeOptions = computed(() => {
+  if (!gradeDialog.majorId) {
+    return gradeOptions.value;
+  }
+  const filtered = gradeOptions.value.filter((item) => item.parentValue == null || String(item.parentValue) === String(gradeDialog.majorId));
+  return filtered.length ? filtered : gradeOptions.value;
 });
 
 const versionFormRef = ref();
@@ -327,6 +339,7 @@ async function openGradeDialog(row) {
   gradeDialog.visible = true;
   gradeDialog.versionId = row.id;
   gradeDialog.versionName = row.versionName || row.versionNo;
+  gradeDialog.majorId = row.majorId || null;
   gradeDialog.gradeIds = await programApi.listVersionGrades(row.id);
 }
 
@@ -379,5 +392,11 @@ onMounted(async () => {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
   gap: 12px;
+}
+
+.grade-tip {
+  margin-bottom: 12px;
+  color: #606266;
+  font-size: 13px;
 }
 </style>
