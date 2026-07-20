@@ -85,6 +85,7 @@ import StandardPage from '../../components/page/StandardPage.vue';
 import SectionCard from '../../components/page/SectionCard.vue';
 import { ROLES } from '../../data/navigationV2';
 import { useUserStore } from '../../store/user';
+import { exportRowsToExcel } from '../../utils/excelExport';
 
 const route = useRoute();
 const router = useRouter();
@@ -93,7 +94,6 @@ const userStore = useUserStore();
 const isTeacher = computed(() => userStore.userInfo.role === ROLES.TEACHER || route.path === '/score-input');
 
 const loading = reactive({
-  import: false,
   export: false,
   submit: false,
   search: false
@@ -134,8 +134,7 @@ const actions = computed(() => {
   }
 
   return [
-    { key: 'import', label: '导入成绩', type: 'primary' },
-    { key: 'export', label: '导出成绩' }
+    { key: 'export', label: '导出成绩', type: 'primary' }
   ];
 });
 
@@ -174,6 +173,11 @@ const teacherTips = [
 ];
 
 async function runAction(key, label) {
+  if (key === 'export') {
+    await exportScores();
+    return;
+  }
+
   loading[key] = true;
   await new Promise((resolve) => window.setTimeout(resolve, 400));
   loading[key] = false;
@@ -206,5 +210,58 @@ async function openWorkspace(mode, row) {
       ])
     }
   });
+}
+
+async function exportScores() {
+  if (!scores.value.length) {
+    ElMessage.warning('当前筛选条件下没有可导出的成绩数据');
+    return;
+  }
+
+  loading.export = true;
+  try {
+    const saveMode = await exportRowsToExcel({
+      fileName: buildExportFileName(),
+      sheetName: '课程目标成绩',
+      title: '按课程目标成绩管理导出',
+      filters: [
+        `学期：${selector.term || '全部'}`,
+        `课程：${selector.course || '全部'}`,
+        `班级：${selector.className || '全部'}`
+      ],
+      columns: [
+        { key: 'term', label: '学期' },
+        { key: 'course', label: '课程' },
+        { key: 'studentId', label: '学号' },
+        { key: 'name', label: '姓名' },
+        { key: 'className', label: '班级' },
+        { key: 'usual', label: '平时成绩', type: 'number' },
+        { key: 'midterm', label: '期中成绩', type: 'number' },
+        { key: 'finalExam', label: '期末成绩', type: 'number' },
+        { key: 'total', label: '总分', type: 'number' },
+        { key: 'auditStatus', label: '审核状态' }
+      ],
+      rows: scores.value.map((item) => ({
+        ...item,
+        term: selector.term || '',
+        course: item.course || selector.course || ''
+      }))
+    });
+
+    if (saveMode === 'cancelled') {
+      return;
+    }
+
+    ElMessage.success(saveMode === 'picker' ? '导出成功，文件已保存到你选择的位置' : '导出成功，文件已开始下载');
+  } finally {
+    loading.export = false;
+  }
+}
+
+function buildExportFileName() {
+  const timestamp = new Date().toISOString().replaceAll(/[-:T]/g, '').slice(0, 14);
+  const courseName = (selector.course || '全部课程').replaceAll(/[\\/:*?"<>|]/g, '_');
+  const className = (selector.className || '全部班级').replaceAll(/[\\/:*?"<>|]/g, '_');
+  return `课程目标成绩_${courseName}_${className}_${timestamp}.xls`;
 }
 </script>
