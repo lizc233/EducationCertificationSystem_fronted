@@ -1,7 +1,7 @@
 ﻿import { del, get, post, put } from './http';
 
-export function fetchInbox(params) {
-  return get('/notice/recipients/inbox', params, { baseURL: '' });
+export function fetchInbox(params, cfg = {}) {
+  return get('/notice/recipients/inbox', params, { baseURL: '', ...cfg });
 }
 
 export function fetchRecipientList(params, cfg = {}) {

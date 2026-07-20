@@ -6,19 +6,19 @@
   >
     <div class="fill-kpis">
       <article class="fill-kpi">
-        <span>褰撳墠瑙掕壊</span>
+        <span>当前角色</span>
         <strong>{{ roleLabel }}</strong>
         <small>问卷入口会根据角色自动切换</small>
       </article>
       <article class="fill-kpi">
-        <span>鍙闂嵎</span>
+        <span>可见问卷</span>
         <strong>{{ surveyCards.length }}</strong>
-        <small>浠呮樉绀哄凡鍙戝竷涓斿尮閰嶅綋鍓嶈鑹茬殑闂嵎</small>
+        <small>仅显示已发布且匹配当前角色的问卷</small>
       </article>
       <article class="fill-kpi">
         <span>已提交</span>
         <strong>{{ submittedCount }}</strong>
-        <small>褰撳墠璐﹀彿宸插畬鎴愭彁浜ょ殑闂嵎鏁伴噺</small>
+        <small>当前账号已完成提交的问卷数量</small>
       </article>
       <article class="fill-kpi">
         <span>待完成</span>
@@ -29,9 +29,9 @@
 
     <SectionCard>
       <el-tabs v-model="activeTab">
-        <el-tab-pane label="闂嵎濉啓" name="fill">
+        <el-tab-pane label="问卷填写" name="fill">
           <div class="fill-layout">
-            <SectionCard title="寰呭～闂嵎">
+            <SectionCard title="待填问卷">
               <div class="survey-list soft-scrollbar">
                 <button
                   v-for="item in surveyCards"
@@ -143,29 +143,29 @@
             </SectionCard>
 
             <div class="aside-stack">
-              <SectionCard title="濉啓瑙勫垯">
+              <SectionCard title="填写规则">
                 <div v-if="selectedSurvey" class="tips-panel">
                   <div class="tips-panel__item">
-                    <span>闈㈠悜瀵硅薄</span>
+                    <span>面向对象</span>
                     <strong>{{ audienceLabel(selectedSurvey.audienceRole) }}</strong>
                   </div>
                   <div class="tips-panel__item">
-                    <span>棰樼洰鏁伴噺</span>
+                    <span>题目数量</span>
                     <strong>{{ selectedSurvey.questions.length }} 题</strong>
                   </div>
                   <div class="tips-panel__item">
-                    <span>鍖垮悕绛栫暐</span>
-                    <strong>{{ selectedSurvey.anonymous ? '鍖垮悕绛斿嵎' : '瀹炲悕绛斿嵎' }}</strong>
+                    <span>匿名策略</span>
+                    <strong>{{ selectedSurvey.anonymous ? '匿名答卷' : '实名答卷' }}</strong>
                   </div>
                   <div class="tips-panel__item">
-                    <span>鎻愪氦鎴</span>
+                    <span>提交截止</span>
                     <strong>{{ formatDateTime(selectedSurvey.deadline) }}</strong>
                   </div>
                 </div>
                 <el-empty v-else description="选择问卷后显示填写规则" />
               </SectionCard>
 
-              <SectionCard title="瀹屾垚杩涘害">
+              <SectionCard title="完成进度">
                 <div v-if="selectedSurvey" class="progress-panel">
                   <el-progress :percentage="completionRate" :stroke-width="16" />
                   <div class="progress-panel__legend">
@@ -178,16 +178,16 @@
                     show-icon
                   />
                 </div>
-                <el-empty v-else description="鏆傛棤杩涘害淇℃伅" />
+                <el-empty v-else description="暂无进度信息" />
               </SectionCard>
             </div>
           </div>
         </el-tab-pane>
 
-        <el-tab-pane v-if="isAdmin" label="鍥炴敹缁熻" name="stats">
+        <el-tab-pane v-if="isAdmin" label="回收统计" name="stats">
           <div class="stats-layout">
-            <SectionCard title="缁熻瀵硅薄">
-              <el-select v-model="statsSurveyId" placeholder="閫夋嫨涓€浠藉凡鍙戝竷闂嵎" style="width: 100%;" @change="loadStats">
+            <SectionCard title="统计对象">
+              <el-select v-model="statsSurveyId" placeholder="选择一份已发布问卷" style="width: 100%;" @change="loadStats">
                 <el-option
                   v-for="item in publishedSurveys"
                   :key="item.id"
@@ -199,7 +199,7 @@
 
             <div class="stats-kpis">
               <article class="stats-kpi">
-                <span>鐩爣浠芥暟</span>
+                <span>目标份数</span>
                 <strong>{{ statsOverview.targetCount || 0 }}</strong>
               </article>
               <article class="stats-kpi">
@@ -217,7 +217,7 @@
             </div>
 
             <div class="stats-grid">
-              <SectionCard title="閫愰缁熻">
+              <SectionCard title="逐题统计">
                 <div class="stats-question-list">
                   <article v-for="question in questionStats" :key="question.questionId" class="stats-question-card">
                     <div class="stats-question-card__title">{{ question.questionCode }} {{ question.questionText }}</div>
@@ -242,23 +242,23 @@
                 </div>
               </SectionCard>
 
-              <SectionCard title="绛斿嵎鏄庣粏">
+              <SectionCard title="答卷明细">
                 <template #extra>
-                  <el-button :disabled="!statsSurveyId" @click="downloadCsv">瀵煎嚭 CSV</el-button>
+                  <el-button :disabled="!statsSurveyId" @click="downloadCsv">导出 CSV</el-button>
                 </template>
                 <el-table :data="responseRows" border stripe>
                   <el-table-column prop="respondentName" label="填报人" min-width="140" />
-                  <el-table-column prop="respondentType" label="瑙掕壊" min-width="100" />
+                  <el-table-column prop="respondentType" label="角色" min-width="100" />
                   <el-table-column prop="submitStatus" label="状态" min-width="100" />
                   <el-table-column prop="answerCount" label="回答数" min-width="90" />
-                  <el-table-column prop="submittedAt" label="鎻愪氦鏃堕棿" min-width="160">
+                  <el-table-column prop="submittedAt" label="提交时间" min-width="160">
                     <template #default="{ row }">
                       {{ formatDateTime(row.submittedAt) }}
                     </template>
                   </el-table-column>
-                  <el-table-column label="鎿嶄綔" width="100">
+                  <el-table-column label="操作" width="100">
                     <template #default="{ row }">
-                      <el-button type="primary" link @click="openResponseDetail(row.id)">璇︽儏</el-button>
+                      <el-button type="primary" link @click="openResponseDetail(row.id)">详情</el-button>
                     </template>
                   </el-table-column>
                 </el-table>
@@ -269,7 +269,7 @@
       </el-tabs>
     </SectionCard>
 
-    <el-drawer v-model="detailVisible" title="绛斿嵎璇︽儏" size="44%">
+    <el-drawer v-model="detailVisible" title="答卷详情" size="44%">
       <div v-if="responseDetail" class="response-detail">
         <div class="response-detail__meta">
           <article class="response-detail__card">
@@ -277,7 +277,7 @@
             <strong>{{ responseDetail.respondentName }}</strong>
           </article>
           <article class="response-detail__card">
-            <span>鎻愪氦鏃堕棿</span>
+            <span>提交时间</span>
             <strong>{{ formatDateTime(responseDetail.submittedAt) }}</strong>
           </article>
         </div>
@@ -288,7 +288,7 @@
           </article>
         </div>
       </div>
-      <el-empty v-else description="鏆傛棤绛斿嵎璇︽儏" />
+      <el-empty v-else description="暂无答卷详情" />
     </el-drawer>
   </StandardPage>
 </template>

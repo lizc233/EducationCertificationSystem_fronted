@@ -1,8 +1,8 @@
 <template>
   <StandardPage
-    title="课程目标达成度评价"
-    :breadcrumbs="['首页', '评价与达成', '课程目标达成度评价']"
-    description="按学期、课程、班级和课程目标查看达成度结果，支持发起计算、查看贡献明细、重新计算和结果确认。"
+    title="课程目标达成评价"
+    :breadcrumbs="['首页', '评价与达成', '课程目标达成评价']"
+    description="查看课程目标达成结果，支持发起计算、查看贡献明细、重新计算和结果确认。"
   >
     <template #actions>
       <el-button type="primary" @click="calcDialogVisible = true">发起计算</el-button>
@@ -42,15 +42,15 @@
       <article class="page-kpi">
         <div class="page-kpi__label">结果总数</div>
         <div class="page-kpi__value">{{ pager.total }}</div>
-        <div class="page-kpi__desc">当前筛选范围内的课程目标结果记录</div>
+        <div class="page-kpi__desc">当前筛选条件下的课程目标达成结果数</div>
       </article>
       <article class="page-kpi">
         <div class="page-kpi__label">平均达成率</div>
         <div class="page-kpi__value">{{ summary.avgRate }}%</div>
-        <div class="page-kpi__desc">按结果列表的达成率平均值统计</div>
+        <div class="page-kpi__desc">按当前结果列表计算的平均达成率</div>
       </article>
       <article class="page-kpi">
-        <div class="page-kpi__label">未达标目标</div>
+        <div class="page-kpi__label">风险目标数</div>
         <div class="page-kpi__value">{{ summary.riskCount }}</div>
         <div class="page-kpi__desc">达成率低于 100% 的课程目标结果数</div>
       </article>
@@ -139,18 +139,31 @@
       </SectionCard>
     </div>
 
-    <el-dialog v-model="calcDialogVisible" title="发起课程目标达成度计算" width="640px">
+    <el-dialog v-model="calcDialogVisible" title="发起课程目标达成计算" width="640px">
       <el-form label-position="top" :model="calcForm">
         <el-form-item label="授课任务">
           <el-select v-model="calcForm.taskId" filterable placeholder="请选择授课任务" style="width: 100%;">
             <el-option
               v-for="item in taskOptions"
               :key="item.id"
-              :label="`${item.taskCode || item.id} / ${item.courseId || '-'} / 班级${item.classId || '-'}`"
+              :label="taskLabelMap.get(item.id) || `${item.taskCode || item.id}`"
               :value="item.id"
             />
           </el-select>
         </el-form-item>
+
+        <el-alert
+          v-if="selectedTask"
+          type="info"
+          :closable="false"
+          show-icon
+          style="margin-bottom: 16px;"
+        >
+          <template #title>
+            当前任务：{{ taskLabelMap.get(selectedTask.id) }}
+          </template>
+        </el-alert>
+
         <el-form-item label="评价模型">
           <el-select v-model="calcForm.modelId" placeholder="请选择模型" style="width: 100%;">
             <el-option
@@ -161,16 +174,28 @@
             />
           </el-select>
         </el-form-item>
+
         <el-form-item label="课程目标">
-          <el-select v-model="calcForm.objectiveIds" multiple collapse-tags placeholder="可多选课程目标" style="width: 100%;">
+          <el-select
+            v-model="calcForm.objectiveIds"
+            multiple
+            collapse-tags
+            placeholder="可多选；留空表示按当前任务下已有成绩批次的目标全部计算"
+            style="width: 100%;"
+          >
             <el-option
-              v-for="item in objectiveOptions"
+              v-for="item in filteredObjectiveOptions"
               :key="item.value"
               :label="item.label"
               :value="item.value"
             />
           </el-select>
         </el-form-item>
+
+        <div v-if="selectedTask && !filteredObjectiveOptions.length" class="paper-note" style="margin-bottom: 16px;">
+          当前授课任务对应课程下没有可选课程目标。若该课程尚未配置课程目标或成绩批次，后端会拒绝本次计算。
+        </div>
+
         <el-form-item label="备注">
           <el-input v-model="calcForm.remark" type="textarea" :rows="3" placeholder="填写本次计算说明" />
         </el-form-item>
@@ -219,7 +244,7 @@
 </template>
 
 <script setup>
-import { computed, onMounted, reactive, ref } from 'vue';
+import { computed, onMounted, reactive, ref, watch } from 'vue';
 import { ElMessage } from 'element-plus';
 import StandardPage from '../../components/page/StandardPage.vue';
 import SectionCard from '../../components/page/SectionCard.vue';
@@ -228,6 +253,7 @@ import {
   confirmCourseTargetResult,
   fetchCourseTargetResultDetail,
   fetchCourseTargetResults,
+  fetchEvalModelDetail,
   fetchEvalModels,
   recalculateCourseTargetResult
 } from '../../api/eval';
@@ -270,10 +296,42 @@ const classOptions = ref([]);
 const objectiveOptions = ref([]);
 const taskOptions = ref([]);
 const modelOptions = ref([]);
+const modelDetailCache = new Map();
 
 const courseModelOptions = computed(() =>
-  modelOptions.value.filter((item) => item.modelType === 'COURSE_TARGET')
+  modelOptions.value.filter((item) => item.modelType === 'COURSE_TARGET' && item.enabled === 1)
 );
+
+const selectedTask = computed(() =>
+  taskOptions.value.find((item) => item.id === calcForm.taskId) || null
+);
+
+const filteredObjectiveOptions = computed(() => {
+  const courseId = selectedTask.value?.courseId;
+  if (!courseId) {
+    return objectiveOptions.value;
+  }
+  return objectiveOptions.value.filter((item) => item.parentValue === courseId);
+});
+
+const taskLabelMap = computed(() => {
+  const semesterMap = new Map(semesterOptions.value.map((item) => [item.value, item.label]));
+  const courseMap = new Map(courseOptions.value.map((item) => [item.value, item.label]));
+  const classMap = new Map(classOptions.value.map((item) => [item.value, item.label]));
+  const map = new Map();
+
+  taskOptions.value.forEach((item) => {
+    const segments = [
+      item.taskCode || `任务${item.id}`,
+      courseMap.get(item.courseId) || `课程${item.courseId || '-'}`,
+      classMap.get(item.classId) || `班级${item.classId || '-'}`,
+      semesterMap.get(item.semesterId) || `学期${item.semesterId || '-'}`
+    ];
+    map.set(item.id, segments.join(' / '));
+  });
+
+  return map;
+});
 
 const summary = computed(() => {
   const rates = rows.value.map((item) => toRate(item.attainmentRate)).filter((item) => !Number.isNaN(item));
@@ -331,6 +389,56 @@ function formatRate(value) {
 function formatDateTime(value) {
   if (!value) return '-';
   return String(value).replace('T', ' ').slice(0, 19);
+}
+
+function resetCalcForm() {
+  calcForm.taskId = null;
+  calcForm.modelId = null;
+  calcForm.objectiveIds = [];
+  calcForm.remark = '';
+}
+
+function mapCourseCalcError(message) {
+  if (!message) {
+    return '';
+  }
+  if (message === 'No score batches found for the selected task and objectives') {
+    return '当前授课任务下还没有成绩批次，请先到成绩评定页面创建成绩批次，并录入、提交成绩后再计算。';
+  }
+  if (message.startsWith('No score batches found for objective:')) {
+    return '所选课程目标下还没有成绩批次，请先补充该目标对应的成绩批次。';
+  }
+  if (message.startsWith('No submitted scores found for batch:') || message.startsWith('No submitted scores found for objective:')) {
+    return '当前成绩尚未提交或锁定，请先提交成绩后再计算。';
+  }
+  if (message.startsWith('No valid scores found for batch:')) {
+    return '当前成绩批次下还没有有效分数，请先补充成绩数据。';
+  }
+  if (message.startsWith('No valid calculation weight found for objective:')) {
+    return '当前评价模型与课程考核方式权重无法匹配，请检查模型权重项编码和课程考核方式编码。';
+  }
+  if (message === 'Selected model is not applicable to the current task') {
+    return '所选评价模型不适用于当前授课任务对应课程。';
+  }
+  if (message === 'Selected model is not enabled') {
+    return '所选评价模型未启用，请先启用后再计算。';
+  }
+  if (message === 'Task not found') {
+    return '所选授课任务不存在，请刷新后重试。';
+  }
+  return message;
+}
+
+async function getModelDetail(modelId) {
+  if (!modelId) {
+    return null;
+  }
+  if (modelDetailCache.has(modelId)) {
+    return modelDetailCache.get(modelId);
+  }
+  const detailData = await fetchEvalModelDetail(modelId);
+  modelDetailCache.set(modelId, detailData);
+  return detailData;
 }
 
 async function loadLookups() {
@@ -395,8 +503,42 @@ async function handleConfirm(id) {
 }
 
 async function submitCalculate() {
+  if (!calcForm.taskId) {
+    ElMessage.warning('请选择授课任务');
+    return;
+  }
+  if (!calcForm.modelId) {
+    ElMessage.warning('请选择评价模型');
+    return;
+  }
+
+  const task = selectedTask.value;
+  if (!task) {
+    ElMessage.warning('未找到所选授课任务，请刷新页面后重试');
+    return;
+  }
+
+  if (calcForm.objectiveIds.length) {
+    const invalidObjective = calcForm.objectiveIds.find((id) =>
+      !filteredObjectiveOptions.value.some((item) => item.value === id)
+    );
+    if (invalidObjective) {
+      ElMessage.warning('所选课程目标不属于当前授课任务对应课程，请重新选择');
+      return;
+    }
+  }
+
   loading.calculate = true;
   try {
+    const modelDetail = await getModelDetail(calcForm.modelId);
+    const isApplicable = (modelDetail?.scopes || []).some((scope) =>
+      scope.scopeType === 'COURSE' && scope.scopeId === task.courseId
+    );
+    if (!isApplicable) {
+      ElMessage.warning('所选评价模型不适用于当前授课任务对应课程');
+      return;
+    }
+
     await calculateCourseTargetResults({
       taskId: calcForm.taskId,
       modelId: calcForm.modelId,
@@ -404,16 +546,30 @@ async function submitCalculate() {
       remark: calcForm.remark
     });
     calcDialogVisible.value = false;
-    calcForm.taskId = null;
-    calcForm.modelId = null;
-    calcForm.objectiveIds = [];
-    calcForm.remark = '';
+    resetCalcForm();
     ElMessage.success('课程目标结果计算完成');
     await loadPage();
+  } catch (error) {
+    const message = error?.response?.data?.message || error?.message || error?.msg || '';
+    const mappedMessage = mapCourseCalcError(message);
+    if (mappedMessage) {
+      ElMessage.error(mappedMessage);
+      return;
+    }
+    throw error;
   } finally {
     loading.calculate = false;
   }
 }
+
+watch(
+  () => calcForm.taskId,
+  () => {
+    calcForm.objectiveIds = calcForm.objectiveIds.filter((id) =>
+      filteredObjectiveOptions.value.some((item) => item.value === id)
+    );
+  }
+);
 
 onMounted(async () => {
   await Promise.all([loadLookups(), loadPage()]);

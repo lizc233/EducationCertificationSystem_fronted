@@ -3,7 +3,7 @@ import { ElMessage } from 'element-plus';
 import { ROLES } from '../../data/navigation';
 import { ROLE_LABEL_MAP, useUserStore } from '../../store/user';
 import {
-  buildSurveyResponseDownloadUrl,
+  downloadSurveyResponses,
   fetchSurveyFillView,
   fetchSurveyQuestionnaireDetail,
   fetchSurveyQuestionStats,
@@ -454,7 +454,7 @@ export function useSurveyFillWorkbench() {
       return;
     }
     if (Number(selectedEntry.value?.canSubmit ?? 0) !== 1) {
-      ElMessage.warning(selectedEntry.value?.submitMessage || '褰撳墠闂嵎鏆傛椂涓嶅彲鎻愪氦');
+      ElMessage.warning(selectedEntry.value?.submitMessage || '当前问卷暂时不可提交');
       return;
     }
     if (!validateBeforeSubmit()) {
@@ -539,15 +539,11 @@ export function useSurveyFillWorkbench() {
     return '-';
   }
 
-  function downloadCsv() {
+  async function downloadCsv() {
     if (!statsSurveyId.value) {
       return;
     }
-    const url = buildSurveyResponseDownloadUrl(statsSurveyId.value);
-    const anchor = document.createElement('a');
-    anchor.href = url;
-    anchor.target = '_blank';
-    anchor.click();
+    await downloadSurveyResponses(statsSurveyId.value);
   }
 
   onMounted(async () => {
