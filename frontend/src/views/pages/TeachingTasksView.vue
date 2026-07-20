@@ -171,8 +171,8 @@
           </el-form-item>
         </div>
         <div class="form-grid">
-          <el-form-item label="方案版本">
-            <el-select v-model="dialog.form.programVersionId" filterable clearable style="width: 100%;">
+          <el-form-item label="方案版本" prop="programVersionId">
+            <el-select v-model="dialog.form.programVersionId" filterable style="width: 100%;">
               <el-option v-for="item in versionOptions" :key="item.value" :label="item.label" :value="item.value" />
             </el-select>
           </el-form-item>
@@ -243,7 +243,8 @@ const rules = {
   semesterId: [{ required: true, message: '请选择学期', trigger: 'change' }],
   courseId: [{ required: true, message: '请选择课程', trigger: 'change' }],
   classId: [{ required: true, message: '请选择班级', trigger: 'change' }],
-  teacherId: [{ required: true, message: '请选择教师', trigger: 'change' }]
+  teacherId: [{ required: true, message: '请选择教师', trigger: 'change' }],
+  programVersionId: [{ required: true, message: '请选择方案版本', trigger: 'change' }]
 };
 
 function createForm(row = {}) {
@@ -340,6 +341,8 @@ async function submitDialog() {
     dialog.visible = false;
     ElMessage.success('授课任务已保存');
     await Promise.all([loadTasks(), loadMyTasks()]);
+  } catch (error) {
+    return;
   } finally {
     saving.value = false;
   }
