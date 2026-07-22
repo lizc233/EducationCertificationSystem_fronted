@@ -1,4 +1,4 @@
-﻿import { del, get, post, put } from './http';
+import { del, download, get, post, put } from './http';
 
 function buildQuery(params = {}) {
   const query = new URLSearchParams();
@@ -86,5 +86,13 @@ export function fetchSurveyQuestionStats(questionnaireId) {
 export function buildSurveyResponseDownloadUrl(questionnaireId, params) {
   const query = buildQuery(params);
   return `${import.meta.env.VITE_API_BASE_URL || '/api'}/surveys/questionnaires/${questionnaireId}/download/responses${query ? `?${query}` : ''}`;
+}
+
+export function downloadSurveyResponses(questionnaireId, params, fileName) {
+  return download(
+    `/surveys/questionnaires/${questionnaireId}/download/responses`,
+    params,
+    fileName || `survey-responses-${questionnaireId}.csv`
+  );
 }
 

@@ -128,7 +128,7 @@
                 v-if="currentMessage.readStatus !== 1"
                 type="primary"
                 :loading="detailActionLoading"
-                @click="handleMarkSingleRead"
+                @click="handleMarkSingleRead()"
               >
                 标为已读
               </el-button>
@@ -183,8 +183,7 @@ import StandardPage from '../../components/page/StandardPage.vue';
 import SectionCard from '../../components/page/SectionCard.vue';
 import {
   deleteNoticeRecipient,
-  fetchNoticeMessage,
-  fetchRecipientList,
+  fetchInbox,
   fetchUnreadCount,
   markAllNoticeRead,
   markNoticeRead
@@ -261,21 +260,21 @@ function syncSelection() {
   }
 }
 
-function normalizeMessage(recipient, detail) {
+function normalizeMessage(item) {
   return {
-    recipientId: recipient.id,
-    noticeId: recipient.noticeId,
-    readStatus: recipient.readStatus ?? 0,
-    readAt: recipient.readAt,
-    recipientCreatedAt: recipient.createdAt,
-    title: detail?.title || '消息通知',
-    content: detail?.content || '',
-    noticeType: detail?.noticeType || '',
-    channelType: detail?.channelType || '',
-    bizType: detail?.bizType || '',
-    bizId: detail?.bizId || '',
-    sendAt: detail?.sendAt || detail?.createdAt || recipient.createdAt,
-    expireAt: detail?.expireAt || ''
+    recipientId: item.recipientId,
+    noticeId: item.noticeId,
+    readStatus: item.readStatus ?? 0,
+    readAt: item.readAt || '',
+    recipientCreatedAt: item.recipientCreatedAt || '',
+    title: item.title || '消息通知',
+    content: item.content || '',
+    noticeType: item.noticeType || '',
+    channelType: item.channelType || '',
+    bizType: item.bizType || '',
+    bizId: item.bizId || '',
+    sendAt: item.sendAt || item.recipientCreatedAt || '',
+    expireAt: item.expireAt || ''
   };
 }
 
@@ -308,7 +307,7 @@ async function loadMessageList() {
 
   loading.value = true;
   try {
-    const page = await fetchRecipientList({
+    const page = await fetchInbox({
       recipientUserId: userId,
       pageNum: pager.pageNum,
       pageSize: pager.pageSize,
@@ -318,17 +317,7 @@ async function loadMessageList() {
     });
 
     const records = Array.isArray(page?.records) ? page.records : [];
-    const detailList = await Promise.all(records.map(async (recipient) => {
-      if (!recipient.noticeId) {
-        return normalizeMessage(recipient, null);
-      }
-      try {
-        const detail = await fetchNoticeMessage(recipient.noticeId, { skipErrorMessage: true });
-        return normalizeMessage(recipient, detail);
-      } catch {
-        return normalizeMessage(recipient, null);
-      }
-    }));
+    const detailList = records.map((item) => normalizeMessage(item));
 
     loadFailed.value = false;
     messages.value = detailList;
@@ -368,13 +357,16 @@ async function openMessage(item) {
 }
 
 async function handleMarkSingleRead(recipientId = currentMessage.value?.recipientId, toast = true) {
-  if (!recipientId) return;
+  const resolvedRecipientId = typeof recipientId === 'number'
+    ? recipientId
+    : Number(recipientId || currentMessage.value?.recipientId || 0);
+  if (!resolvedRecipientId) return;
 
   detailActionLoading.value = true;
   try {
-    await markNoticeRead(recipientId);
+    await markNoticeRead(resolvedRecipientId);
     messages.value = messages.value.map((item) => (
-      item.recipientId === recipientId
+      item.recipientId === resolvedRecipientId
         ? { ...item, readStatus: 1, readAt: new Date().toISOString() }
         : item
     ));
