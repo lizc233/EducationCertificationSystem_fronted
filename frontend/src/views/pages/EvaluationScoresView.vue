@@ -1,267 +1,589 @@
 <template>
   <StandardPage
-    :title="pageTitle"
-    :breadcrumbs="breadcrumbs"
-    :description="pageDescription"
+    title="按课程目标成绩管理"
+    :breadcrumbs="['首页', '评价与达成', '按课程目标成绩管理']"
+    description="按授课任务与课程目标维护成绩批次，录入/导入学生成绩，重算加权分并提交锁定，供达成度评价读取。"
   >
     <template #actions>
-      <el-button
-        v-for="action in actions"
-        :key="action.key"
-        :type="action.type || 'default'"
-        :loading="loading[action.key]"
-        @click="runAction(action.key, action.label)"
-      >
-        {{ action.label }}
-      </el-button>
+      <el-button type="primary" @click="openBatchDialog()">新建成绩批次</el-button>
+      <el-button @click="loadBatches">刷新批次</el-button>
     </template>
 
     <template #filters>
-      <el-form :inline="true" :model="selector">
-        <el-form-item label="学期">
-          <el-select v-model="selector.term" style="width: 180px;">
-            <el-option label="2025-2026-2" value="2025-2026-2" />
+      <el-form :inline="true" :model="filters" class="crud-filter-form">
+        <el-form-item label="授课任务">
+          <el-select v-model="filters.taskId" clearable filterable style="width: 220px;" @change="loadBatches">
+            <el-option v-for="item in taskOptions" :key="item.value" :label="item.label" :value="item.value" />
           </el-select>
         </el-form-item>
-        <el-form-item label="课程">
-          <el-select v-model="selector.course" style="width: 240px;">
-            <el-option v-for="item in availableCourses" :key="item" :label="item" :value="item" />
+        <el-form-item label="课程目标">
+          <el-select v-model="filters.objectiveId" clearable filterable style="width: 220px;" @change="loadBatches">
+            <el-option v-for="item in objectiveOptions" :key="item.value" :label="item.label" :value="item.value" />
           </el-select>
         </el-form-item>
-        <el-form-item label="班级">
-          <el-select v-model="selector.className" style="width: 180px;">
-            <el-option v-for="item in availableClasses" :key="item" :label="item" :value="item" />
+        <el-form-item label="计算状态">
+          <el-select v-model="filters.calcStatus" clearable style="width: 160px;" @change="loadBatches">
+            <el-option v-for="item in calcStatusOptions" :key="item.value" :label="item.label" :value="item.value" />
           </el-select>
+        </el-form-item>
+        <el-form-item label="关键词">
+          <el-input v-model.trim="filters.keyword" clearable placeholder="批次编号 / 备注" style="width: 200px;" />
         </el-form-item>
         <el-form-item>
-          <el-button type="primary" :loading="loading.search" @click="runAction('search', isTeacher ? '查询成绩录入' : '查询成绩总表')">搜索</el-button>
+          <el-button type="primary" :loading="loading.batches" @click="loadBatches">查询</el-button>
           <el-button @click="resetFilters">重置</el-button>
         </el-form-item>
       </el-form>
     </template>
 
-    <div class="split-grid" :style="{ gridTemplateColumns: isTeacher ? 'minmax(0, 1fr) 320px' : 'minmax(0, 1fr)' }">
-      <SectionCard :title="isTeacher ? '成绩录入列表' : '课程目标成绩总表'">
-        <el-table :data="scores" border stripe>
-          <el-table-column prop="studentId" label="学号" min-width="120" />
-          <el-table-column prop="name" label="姓名" min-width="100" />
-          <el-table-column prop="className" label="班级" min-width="120" />
-          <el-table-column prop="usual" label="平时" min-width="90" />
-          <el-table-column prop="midterm" label="期中" min-width="90" />
-          <el-table-column prop="finalExam" label="期末" min-width="90" />
-          <el-table-column prop="total" label="总分" min-width="90" />
-          <el-table-column prop="auditStatus" label="审核状态" min-width="110">
-            <template #default="{ row }">
-              <el-tag :type="auditTag[row.auditStatus]">{{ row.auditStatus }}</el-tag>
-            </template>
-          </el-table-column>
-          <el-table-column label="操作" fixed="right" width="200">
-            <template #default="{ row }">
-              <el-button type="primary" link @click="openWorkspace('view', row)">查看详情</el-button>
-              <el-button type="primary" link @click="openWorkspace('edit', row)">编辑</el-button>
-            </template>
-          </el-table-column>
-        </el-table>
-      </SectionCard>
+    <SectionCard title="成绩批次">
+      <el-table
+        v-loading="loading.batches"
+        :data="batchPage.records"
+        border
+        stripe
+        highlight-current-row
+        @current-change="selectBatch"
+      >
+        <el-table-column prop="batchNo" label="批次编号" min-width="180" />
+        <el-table-column label="授课任务" min-width="180">
+          <template #default="{ row }">{{ resolveOptionLabel(taskOptions, row.taskId) }}</template>
+        </el-table-column>
+        <el-table-column label="课程目标" min-width="180">
+          <template #default="{ row }">{{ resolveOptionLabel(objectiveOptions, row.objectiveId) }}</template>
+        </el-table-column>
+        <el-table-column label="考核方式" min-width="160">
+          <template #default="{ row }">{{ resolveOptionLabel(methodOptions, row.methodId) }}</template>
+        </el-table-column>
+        <el-table-column label="计算状态" width="110">
+          <template #default="{ row }">
+            <el-tag :type="calcStatusTag[row.calcStatus] || 'info'">
+              {{ resolveOptionLabel(calcStatusOptions, row.calcStatus) }}
+            </el-tag>
+          </template>
+        </el-table-column>
+        <el-table-column label="锁定" width="80">
+          <template #default="{ row }">
+            <el-tag :type="row.lockedFlag === 1 ? 'danger' : 'success'">
+              {{ row.lockedFlag === 1 ? '已锁定' : '未锁定' }}
+            </el-tag>
+          </template>
+        </el-table-column>
+        <el-table-column label="操作" min-width="300" fixed="right">
+          <template #default="{ row }">
+            <el-button type="primary" link @click="selectBatch(row)">查看成绩</el-button>
+            <el-button type="primary" link :disabled="row.lockedFlag === 1" @click="openBatchDialog(row)">编辑</el-button>
+            <el-button type="primary" link :loading="rowLoading[`recalc-${row.id}`]" :disabled="row.lockedFlag === 1" @click="recalculate(row)">重算</el-button>
+            <el-button type="warning" link :disabled="row.lockedFlag === 1" @click="lock(row)">锁定</el-button>
+            <el-button type="danger" link :disabled="row.lockedFlag === 1" @click="removeBatch(row)">删除</el-button>
+          </template>
+        </el-table-column>
+      </el-table>
 
-      <SectionCard v-if="isTeacher" title="提交审核提示">
-        <div class="list-panel">
-          <article v-for="item in teacherTips" :key="item.title" class="list-item">
-            <div class="dashboard-action__title">{{ item.title }}</div>
-            <div class="dashboard-action__desc">{{ item.desc }}</div>
-            <div class="dashboard-action__time">{{ item.time }}</div>
-          </article>
+      <div class="crud-pagination">
+        <el-pagination
+          v-model:current-page="filters.page"
+          v-model:page-size="filters.size"
+          background
+          layout="total, sizes, prev, pager, next"
+          :page-sizes="[10, 20, 50]"
+          :total="batchPage.total"
+          @current-change="loadBatches"
+          @size-change="loadBatches"
+        />
+      </div>
+    </SectionCard>
+
+    <SectionCard :title="detailTitle">
+      <template #extra>
+        <div v-if="currentBatch">
+          <el-button type="primary" size="small" :disabled="currentBatch.lockedFlag === 1" @click="openDetailDialog()">录入成绩</el-button>
+          <el-button size="small" :disabled="currentBatch.lockedFlag === 1" @click="openImportDialog">批量导入</el-button>
+          <el-button size="small" :loading="loading.export" @click="exportDetails">导出成绩</el-button>
         </div>
-      </SectionCard>
-    </div>
+      </template>
+
+      <el-empty v-if="!currentBatch" description="请选择上方的成绩批次以查看成绩明细" />
+      <el-table v-else v-loading="loading.details" :data="details" border stripe>
+        <el-table-column prop="studentNo" label="学号" min-width="130" />
+        <el-table-column prop="studentName" label="姓名" min-width="110" />
+        <el-table-column prop="className" label="班级" min-width="140" />
+        <el-table-column prop="rawScore" label="原始分" min-width="90" />
+        <el-table-column prop="weightedScore" label="加权分" min-width="90" />
+        <el-table-column prop="totalScore" label="总分" min-width="90" />
+        <el-table-column label="提交状态" width="110">
+          <template #default="{ row }">
+            <el-tag :type="row.submitStatus === 'SUBMITTED' ? 'success' : 'info'">
+              {{ resolveOptionLabel(submitStatusOptions, row.submitStatus) }}
+            </el-tag>
+          </template>
+        </el-table-column>
+        <el-table-column label="锁定" width="80">
+          <template #default="{ row }">
+            <el-tag :type="row.lockedFlag === 1 ? 'danger' : 'success'">
+              {{ row.lockedFlag === 1 ? '已锁定' : '未锁定' }}
+            </el-tag>
+          </template>
+        </el-table-column>
+        <el-table-column label="操作" min-width="220" fixed="right">
+          <template #default="{ row }">
+            <el-button type="primary" link :disabled="row.lockedFlag === 1 || row.submitStatus === 'SUBMITTED'" @click="openDetailDialog(row)">编辑</el-button>
+            <el-button type="primary" link :loading="rowLoading[`submit-${row.id}`]" :disabled="row.lockedFlag === 1 || row.submitStatus === 'SUBMITTED'" @click="submitDetail(row)">提交</el-button>
+            <el-button type="danger" link :disabled="row.lockedFlag === 1" @click="removeDetail(row)">删除</el-button>
+          </template>
+        </el-table-column>
+      </el-table>
+    </SectionCard>
+
+    <!-- 批次编辑弹窗 -->
+    <el-dialog v-model="batchDialog.visible" :title="batchDialog.form.id ? '编辑成绩批次' : '新建成绩批次'" width="640px">
+      <el-form ref="batchFormRef" :model="batchDialog.form" :rules="batchRules" label-position="top">
+        <el-form-item label="批次编号">
+          <el-input v-model.trim="batchDialog.form.batchNo" placeholder="可留空，后端自动生成" />
+        </el-form-item>
+        <div class="form-grid">
+          <el-form-item label="授课任务" prop="taskId">
+            <el-select v-model="batchDialog.form.taskId" filterable style="width: 100%;">
+              <el-option v-for="item in taskOptions" :key="item.value" :label="item.label" :value="item.value" />
+            </el-select>
+          </el-form-item>
+          <el-form-item label="课程目标" prop="objectiveId">
+            <el-select v-model="batchDialog.form.objectiveId" filterable style="width: 100%;">
+              <el-option v-for="item in objectiveOptions" :key="item.value" :label="item.label" :value="item.value" />
+            </el-select>
+          </el-form-item>
+        </div>
+        <div class="form-grid">
+          <el-form-item label="考核方式">
+            <el-select v-model="batchDialog.form.methodId" clearable filterable style="width: 100%;">
+              <el-option v-for="item in methodOptions" :key="item.value" :label="item.label" :value="item.value" />
+            </el-select>
+          </el-form-item>
+          <el-form-item label="计算状态">
+            <el-select v-model="batchDialog.form.calcStatus" style="width: 100%;">
+              <el-option v-for="item in calcStatusOptions" :key="item.value" :label="item.label" :value="item.value" />
+            </el-select>
+          </el-form-item>
+        </div>
+        <el-form-item label="备注"><el-input v-model="batchDialog.form.remark" /></el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="batchDialog.visible = false">取消</el-button>
+        <el-button type="primary" :loading="saving.batch" @click="submitBatchDialog">保存</el-button>
+      </template>
+    </el-dialog>
+
+    <!-- 明细编辑弹窗 -->
+    <el-dialog v-model="detailDialog.visible" :title="detailDialog.form.id ? '编辑成绩' : '录入成绩'" width="560px">
+      <el-form ref="detailFormRef" :model="detailDialog.form" :rules="detailRules" label-position="top">
+        <el-form-item label="学生" prop="studentId">
+          <el-select v-model="detailDialog.form.studentId" filterable :disabled="!!detailDialog.form.id" style="width: 100%;">
+            <el-option v-for="item in studentOptions" :key="item.value" :label="item.label" :value="item.value" />
+          </el-select>
+        </el-form-item>
+        <el-form-item label="原始分（0-100）" prop="rawScore">
+          <el-input-number v-model="detailDialog.form.rawScore" :min="0" :max="100" :precision="2" style="width: 100%;" />
+        </el-form-item>
+        <el-form-item label="备注"><el-input v-model="detailDialog.form.remark" /></el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="detailDialog.visible = false">取消</el-button>
+        <el-button type="primary" :loading="saving.detail" @click="submitDetailDialog">保存</el-button>
+      </template>
+    </el-dialog>
+
+    <!-- 批量导入弹窗 -->
+    <el-dialog v-model="importDialog.visible" title="批量导入成绩" width="560px">
+      <p class="paper-note">
+        每行格式：学号,原始分。已存在的学生将更新原始分，不存在的将新增。示例：<br />
+        20230001,85<br />
+        20230002,92
+      </p>
+      <el-input v-model="importDialog.text" type="textarea" :rows="8" placeholder="每行一条：学号,原始分" />
+      <template #footer>
+        <el-button @click="importDialog.visible = false">取消</el-button>
+        <el-button type="primary" :loading="saving.import" @click="submitImport">导入</el-button>
+      </template>
+    </el-dialog>
   </StandardPage>
 </template>
 
 <script setup>
-import { computed, reactive } from 'vue';
-import { ElMessage } from 'element-plus';
-import { useRoute, useRouter } from 'vue-router';
+import { computed, onMounted, reactive, ref } from 'vue';
+import { ElMessage, ElMessageBox } from 'element-plus';
 import StandardPage from '../../components/page/StandardPage.vue';
 import SectionCard from '../../components/page/SectionCard.vue';
-import { ROLES } from '../../data/navigationV2';
-import { useUserStore } from '../../store/user';
-import { exportRowsToExcel } from '../../utils/excelExport';
-
-const route = useRoute();
-const router = useRouter();
-const userStore = useUserStore();
-
-const isTeacher = computed(() => userStore.userInfo.role === ROLES.TEACHER || route.path === '/score-input');
+import {
+  calcStatusOptions,
+  lookupApi,
+  resolveOptionLabel,
+  scoreApi,
+  submitStatusOptions,
+  teachingApi
+} from '../../api/bc';
 
 const loading = reactive({
-  export: false,
-  submit: false,
-  search: false
+  batches: false,
+  details: false,
+  export: false
 });
-
-const selector = reactive({
-  term: '2025-2026-2',
-  course: '软件工程',
-  className: '软工 2301'
+const saving = reactive({
+  batch: false,
+  detail: false,
+  import: false
 });
+const rowLoading = reactive({});
 
-const allCourses = ['软件工程', '需求分析与建模', '数据库原理', '计算机网络'];
-const teacherCourses = ['软件工程', '需求分析与建模'];
-const allClasses = ['软工 2301', '软工 2302', '计科 2303'];
-const teacherClasses = ['软工 2301', '软工 2302'];
+const batchFormRef = ref();
+const detailFormRef = ref();
 
-const availableCourses = computed(() => (isTeacher.value ? teacherCourses : allCourses));
-const availableClasses = computed(() => (isTeacher.value ? teacherClasses : allClasses));
+const taskOptions = ref([]);
+const objectiveOptions = ref([]);
+const methodOptions = ref([]);
+const studentOptions = ref([]);
 
-const pageTitle = computed(() => (isTeacher.value ? '成绩录入与提交' : '按课程目标成绩管理'));
-const breadcrumbs = computed(() => {
-  return isTeacher.value
-    ? ['首页', '成绩管理', '成绩录入与提交']
-    : ['首页', '评价与达成', '按课程目标成绩管理'];
-});
-
-const pageDescription = computed(() => {
-  return isTeacher.value
-    ? '选择课程后录入学生成绩，提交后进入成绩审核流程，审核通过后学生端可见。'
-    : '查看全校课程目标成绩总表、锁定状态和提交结果。';
-});
-
-const actions = computed(() => {
-  if (isTeacher.value) {
-    return [
-      { key: 'submit', label: '提交审核', type: 'primary' }
-    ];
-  }
-
-  return [
-    { key: 'export', label: '导出成绩', type: 'primary' }
-  ];
-});
-
-const auditTag = {
-  待提交: 'info',
-  待审核: 'warning',
-  已通过: 'success'
+const calcStatusTag = {
+  PENDING: 'info',
+  DONE: 'success',
+  LOCKED: 'warning'
 };
 
-const sourceRows = [
-  { id: 'score-1', studentId: '20230001', name: '刘晨', className: '软工 2301', course: '软件工程', usual: 85, midterm: 82, finalExam: 90, total: 86.8, auditStatus: '待审核' },
-  { id: 'score-2', studentId: '20230002', name: '孙悦', className: '软工 2301', course: '软件工程', usual: 78, midterm: 80, finalExam: 86, total: 81.6, auditStatus: '待审核' },
-  { id: 'score-3', studentId: '20230003', name: '何宇', className: '软工 2301', course: '软件工程', usual: 92, midterm: 91, finalExam: 94, total: 92.8, auditStatus: '已通过' },
-  { id: 'score-4', studentId: '20230004', name: '杨帆', className: '软工 2301', course: '软件工程', usual: 76, midterm: 79, finalExam: 84, total: 79.8, auditStatus: '待审核' },
-  { id: 'score-5', studentId: '20230005', name: '陈楠', className: '软工 2302', course: '需求分析与建模', usual: 88, midterm: 86, finalExam: 92, total: 88.8, auditStatus: '待提交' },
-  { id: 'score-6', studentId: '20230006', name: '顾安', className: '软工 2302', course: '需求分析与建模', usual: 81, midterm: 82, finalExam: 86, total: 83.2, auditStatus: '待提交' },
-  { id: 'score-7', studentId: '20230007', name: '罗佳', className: '软工 2302', course: '需求分析与建模', usual: 79, midterm: 80, finalExam: 80, total: 79.6, auditStatus: '待提交' },
-  { id: 'score-8', studentId: '20230008', name: '马腾', className: '软工 2302', course: '需求分析与建模', usual: 90, midterm: 92, finalExam: 95, total: 92.6, auditStatus: '已通过' },
-  { id: 'score-9', studentId: '20230009', name: '张宁', className: '计科 2303', course: '数据库原理', usual: 74, midterm: 76, finalExam: 81, total: 77.4, auditStatus: '已通过' },
-  { id: 'score-10', studentId: '20230010', name: '邓琴', className: '计科 2303', course: '计算机网络', usual: 86, midterm: 88, finalExam: 89, total: 87.8, auditStatus: '已通过' }
-];
-
-const scores = computed(() => {
-  return sourceRows.filter((item) => {
-    const courseMatched = !selector.course || item.course === selector.course;
-    const classMatched = !selector.className || item.className === selector.className;
-    const roleMatched = !isTeacher.value || teacherCourses.includes(item.course);
-    return courseMatched && classMatched && roleMatched;
-  });
+const filters = reactive({
+  page: 1,
+  size: 10,
+  taskId: null,
+  objectiveId: null,
+  calcStatus: '',
+  keyword: ''
 });
 
-const teacherTips = [
-  { title: '软件工程 2301 仍有 4 名学生待确认成绩', desc: '建议在 2026 年 7 月 17 日 18:00 前完成复核并提交审核。', time: '2026-07-17' },
-  { title: '需求分析与建模批次尚未提交', desc: '提交审核后，教务老师会在 2026 年 7 月 18 日开始审核。', time: '2026-07-17' },
-  { title: '审核通过后学生才可查看成绩', desc: '若被驳回，请根据原因修正后再次提交。', time: '2026-07-17' }
-];
+const batchPage = reactive({
+  records: [],
+  total: 0
+});
 
-async function runAction(key, label) {
-  if (key === 'export') {
-    await exportScores();
+const currentBatch = ref(null);
+const details = ref([]);
+
+const detailTitle = computed(() =>
+  currentBatch.value ? `成绩明细 - ${currentBatch.value.batchNo}` : '成绩明细'
+);
+
+const batchDialog = reactive({
+  visible: false,
+  form: {}
+});
+const detailDialog = reactive({
+  visible: false,
+  form: {}
+});
+const importDialog = reactive({
+  visible: false,
+  text: ''
+});
+
+const batchRules = {
+  taskId: [{ required: true, message: '请选择授课任务', trigger: 'change' }],
+  objectiveId: [{ required: true, message: '请选择课程目标', trigger: 'change' }]
+};
+const detailRules = {
+  studentId: [{ required: true, message: '请选择学生', trigger: 'change' }],
+  rawScore: [{ required: true, message: '请输入原始分', trigger: 'blur' }]
+};
+
+function createBatchForm(row = {}) {
+  return {
+    id: row.id || null,
+    batchNo: row.batchNo || '',
+    taskId: row.taskId || null,
+    objectiveId: row.objectiveId || null,
+    methodId: row.methodId || null,
+    calcStatus: row.calcStatus || 'PENDING',
+    remark: row.remark || ''
+  };
+}
+
+function createDetailForm(row = {}) {
+  return {
+    id: row.id || null,
+    studentId: row.studentId || null,
+    rawScore: row.rawScore != null ? Number(row.rawScore) : 0,
+    remark: row.remark || ''
+  };
+}
+
+async function loadLookups() {
+  const [tasks, objectives, methods, students] = await Promise.all([
+    teachingApi.listTasks({ page: 1, size: 200 }),
+    lookupApi.courseObjectives(),
+    lookupApi.assessmentMethods(),
+    lookupApi.students()
+  ]);
+  taskOptions.value = (tasks.records || []).map((item) => ({
+    value: item.id,
+    label: item.taskCode || `任务#${item.id}`
+  }));
+  objectiveOptions.value = objectives || [];
+  methodOptions.value = methods || [];
+  studentOptions.value = students || [];
+}
+
+async function loadBatches() {
+  loading.batches = true;
+  try {
+    const result = await scoreApi.listBatches(filters);
+    batchPage.records = result.records || [];
+    batchPage.total = result.total || 0;
+    if (currentBatch.value) {
+      const refreshed = batchPage.records.find((item) => item.id === currentBatch.value.id);
+      currentBatch.value = refreshed || null;
+      if (!refreshed) {
+        details.value = [];
+      }
+    }
+  } finally {
+    loading.batches = false;
+  }
+}
+
+async function selectBatch(row) {
+  if (!row) {
     return;
   }
+  currentBatch.value = row;
+  await loadDetails();
+}
 
-  loading[key] = true;
-  await new Promise((resolve) => window.setTimeout(resolve, 400));
-  loading[key] = false;
-  ElMessage.success(`${label}成功`);
+async function loadDetails() {
+  if (!currentBatch.value) {
+    details.value = [];
+    return;
+  }
+  loading.details = true;
+  try {
+    details.value = await scoreApi.listDetails({ batchId: currentBatch.value.id });
+  } finally {
+    loading.details = false;
+  }
 }
 
 function resetFilters() {
-  selector.term = '2025-2026-2';
-  selector.course = availableCourses.value[0];
-  selector.className = availableClasses.value[0];
-  ElMessage.success('已重置筛选条件');
+  filters.page = 1;
+  filters.size = 10;
+  filters.taskId = null;
+  filters.objectiveId = null;
+  filters.calcStatus = '';
+  filters.keyword = '';
+  loadBatches();
 }
 
-async function openWorkspace(mode, row) {
-  await router.push({
-    name: 'record-workspace',
-    params: { pageKey: isTeacher.value ? 'score-input' : 'evaluation-scores', mode, id: row.id },
-    query: {
-      from: route.path,
-      title: pageTitle.value,
-      payload: JSON.stringify(row),
-      schema: JSON.stringify([
-        { prop: 'studentId', label: '学号', type: 'input' },
-        { prop: 'name', label: '姓名', type: 'input' },
-        { prop: 'className', label: '班级', type: 'input' },
-        { prop: 'usual', label: '平时成绩', type: 'input' },
-        { prop: 'midterm', label: '期中成绩', type: 'input' },
-        { prop: 'finalExam', label: '期末成绩', type: 'input' },
-        { prop: 'total', label: '总分', type: 'input' }
-      ])
-    }
-  });
+function openBatchDialog(row) {
+  batchDialog.form = createBatchForm(row);
+  batchDialog.visible = true;
 }
 
-async function exportScores() {
-  if (!scores.value.length) {
-    ElMessage.warning('当前筛选条件下没有可导出的成绩数据');
+async function submitBatchDialog() {
+  const valid = await batchFormRef.value?.validate().catch(() => false);
+  if (!valid) {
     return;
   }
-
-  loading.export = true;
+  saving.batch = true;
   try {
-    const saveMode = await exportRowsToExcel({
-      fileName: buildExportFileName(),
-      sheetName: '课程目标成绩',
-      title: '按课程目标成绩管理导出',
-      filters: [
-        `学期：${selector.term || '全部'}`,
-        `课程：${selector.course || '全部'}`,
-        `班级：${selector.className || '全部'}`
-      ],
-      columns: [
-        { key: 'term', label: '学期' },
-        { key: 'course', label: '课程' },
-        { key: 'studentId', label: '学号' },
-        { key: 'name', label: '姓名' },
-        { key: 'className', label: '班级' },
-        { key: 'usual', label: '平时成绩', type: 'number' },
-        { key: 'midterm', label: '期中成绩', type: 'number' },
-        { key: 'finalExam', label: '期末成绩', type: 'number' },
-        { key: 'total', label: '总分', type: 'number' },
-        { key: 'auditStatus', label: '审核状态' }
-      ],
-      rows: scores.value.map((item) => ({
-        ...item,
-        term: selector.term || '',
-        course: item.course || selector.course || ''
-      }))
-    });
+    const { id, ...payload } = batchDialog.form;
+    id ? await scoreApi.updateBatch(id, payload) : await scoreApi.createBatch(payload);
+    batchDialog.visible = false;
+    ElMessage.success('成绩批次已保存');
+    await loadBatches();
+  } catch (error) {
+    return;
+  } finally {
+    saving.batch = false;
+  }
+}
 
-    if (saveMode === 'cancelled') {
+async function recalculate(row) {
+  rowLoading[`recalc-${row.id}`] = true;
+  try {
+    await scoreApi.recalculateBatch(row.id);
+    ElMessage.success('重算完成');
+    await loadBatches();
+    if (currentBatch.value?.id === row.id) {
+      await loadDetails();
+    }
+  } finally {
+    rowLoading[`recalc-${row.id}`] = false;
+  }
+}
+
+async function lock(row) {
+  try {
+    await ElMessageBox.confirm(`锁定后批次“${row.batchNo}”及其成绩将不可再修改，确认锁定吗？`, '锁定确认', { type: 'warning' });
+    await scoreApi.lockBatch(row.id);
+    ElMessage.success('批次已锁定');
+    await loadBatches();
+    if (currentBatch.value?.id === row.id) {
+      await loadDetails();
+    }
+  } catch (error) {
+    if (error !== 'cancel' && error !== 'close') {
+      throw error;
+    }
+  }
+}
+
+async function removeBatch(row) {
+  try {
+    await ElMessageBox.confirm(`确认删除成绩批次“${row.batchNo}”吗？其下成绩明细将一并删除。`, '删除确认', { type: 'warning' });
+    await scoreApi.deleteBatch(row.id);
+    ElMessage.success('成绩批次已删除');
+    if (currentBatch.value?.id === row.id) {
+      currentBatch.value = null;
+      details.value = [];
+    }
+    await loadBatches();
+  } catch (error) {
+    if (error !== 'cancel' && error !== 'close') {
+      throw error;
+    }
+  }
+}
+
+function openDetailDialog(row) {
+  detailDialog.form = createDetailForm(row);
+  detailDialog.visible = true;
+}
+
+async function submitDetailDialog() {
+  const valid = await detailFormRef.value?.validate().catch(() => false);
+  if (!valid) {
+    return;
+  }
+  saving.detail = true;
+  try {
+    const { id, ...rest } = detailDialog.form;
+    if (id) {
+      await scoreApi.updateDetail(id, rest);
+    } else {
+      await scoreApi.createDetail({ ...rest, batchId: currentBatch.value.id });
+    }
+    detailDialog.visible = false;
+    ElMessage.success('成绩已保存');
+    await loadDetails();
+  } catch (error) {
+    return;
+  } finally {
+    saving.detail = false;
+  }
+}
+
+async function submitDetail(row) {
+  rowLoading[`submit-${row.id}`] = true;
+  try {
+    await scoreApi.submitDetail(row.id);
+    ElMessage.success('成绩已提交');
+    await loadDetails();
+  } finally {
+    rowLoading[`submit-${row.id}`] = false;
+  }
+}
+
+async function removeDetail(row) {
+  try {
+    await ElMessageBox.confirm(`确认删除学生“${row.studentName || row.studentNo}”的成绩吗？`, '删除确认', { type: 'warning' });
+    await scoreApi.deleteDetail(row.id);
+    ElMessage.success('成绩已删除');
+    await loadDetails();
+  } catch (error) {
+    if (error !== 'cancel' && error !== 'close') {
+      throw error;
+    }
+  }
+}
+
+function openImportDialog() {
+  importDialog.text = '';
+  importDialog.visible = true;
+}
+
+function buildStudentNoMap() {
+  return Object.fromEntries(studentOptions.value.map((item) => [String(item.label), item.value]));
+}
+
+async function submitImport() {
+  const lines = importDialog.text
+    .split('\n')
+    .map((line) => line.trim())
+    .filter((line) => line.length > 0);
+  if (!lines.length) {
+    ElMessage.warning('请输入导入内容');
+    return;
+  }
+  const studentNoMap = buildStudentNoMap();
+  const items = [];
+  const invalid = [];
+  lines.forEach((line, index) => {
+    const [noPart, scorePart] = line.split(/[,，\t]/).map((cell) => (cell || '').trim());
+    const studentId = studentNoMap[noPart];
+    const rawScore = Number(scorePart);
+    if (!studentId || Number.isNaN(rawScore)) {
+      invalid.push(`第${index + 1}行：${line}`);
       return;
     }
+    items.push({ studentId, rawScore });
+  });
+  if (!items.length) {
+    ElMessage.error(`没有可导入的有效行。请检查学号是否存在。${invalid.length ? '无效行：' + invalid.join('；') : ''}`);
+    return;
+  }
+  saving.import = true;
+  try {
+    const result = await scoreApi.importDetails({ batchId: currentBatch.value.id, items });
+    const parts = [`新增 ${result.inserted} 条`, `更新 ${result.updated} 条`];
+    if (result.failed) {
+      parts.push(`失败 ${result.failed} 条`);
+    }
+    ElMessage.success(`导入完成：${parts.join('，')}`);
+    if (result.errors?.length) {
+      ElMessage.warning(result.errors.join('；'));
+    }
+    importDialog.visible = false;
+    await loadDetails();
+  } catch (error) {
+    return;
+  } finally {
+    saving.import = false;
+  }
+}
 
-    ElMessage.success(saveMode === 'picker' ? '导出成功，文件已保存到你选择的位置' : '导出成功，文件已开始下载');
+async function exportDetails() {
+  if (!currentBatch.value) {
+    return;
+  }
+  loading.export = true;
+  try {
+    await scoreApi.exportDetails({ batchId: currentBatch.value.id });
+    ElMessage.success('导出成功，文件已开始下载');
   } finally {
     loading.export = false;
   }
 }
 
-function buildExportFileName() {
-  const timestamp = new Date().toISOString().replaceAll(/[-:T]/g, '').slice(0, 14);
-  const courseName = (selector.course || '全部课程').replaceAll(/[\\/:*?"<>|]/g, '_');
-  const className = (selector.className || '全部班级').replaceAll(/[\\/:*?"<>|]/g, '_');
-  return `课程目标成绩_${courseName}_${className}_${timestamp}.xls`;
-}
+onMounted(async () => {
+  await loadLookups();
+  await loadBatches();
+});
 </script>
+
+<style scoped>
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+
+@media (max-width: 760px) {
+  .form-grid {
+    grid-template-columns: 1fr;
+  }
+}
+</style>
